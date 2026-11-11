@@ -19,9 +19,17 @@
     }
     canvas { display: block; }
   </style>
+  <!-- Panel styles (resume info panel + ending) -->
+  <link rel="stylesheet" href="./src/ui/infoPanel.css" />
+  <link rel="stylesheet" href="./src/ui/ending.css" />
+  <!-- Lets `import Phaser from 'phaser'` work on GitHub Pages without a build step -->
+  <script type="importmap">
+    { "imports": { "phaser": "./vendor/phaser/phaser.js" } }
+  </script>
 </head>
 <body>
   <div id="game-container"></div>
-  <script type="module" src="/src/main.js"></script>
+  <!-- Relative path so it works at https://<user>.github.io/<repo>/ -->
+  <script type="module" src="./src/main.js"></script>
 </body>
 </html>

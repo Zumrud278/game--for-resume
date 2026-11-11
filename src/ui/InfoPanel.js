@@ -1,4 +1,3 @@
-import './infoPanel.css';
 import { RESUME } from '../data/resume.js';
 
 // Image file for each icon key used in resume.js

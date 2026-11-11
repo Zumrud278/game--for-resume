@@ -1,4 +1,3 @@
-import './ending.css';
 import { RESUME } from '../data/resume.js';
 
 const escapeHtml = (s) =>

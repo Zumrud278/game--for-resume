@@ -12,5 +12,8 @@ const config = {
 
 const game = new Phaser.Game(config);
 
-// Dev-only handle for debugging in the browser console
-if (import.meta.env.DEV) window.__game = game;
+// Debug handle for the browser console: always in `npm run dev`,
+// and on any server when the URL ends with ?debug
+if (import.meta.env?.DEV || new URLSearchParams(location.search).has('debug')) {
+  window.__game = game;
+}
