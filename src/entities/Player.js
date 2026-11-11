@@ -1,108 +1,107 @@
 import Phaser from 'phaser';
 import { PLAYER_SPEED, PLAYER_JUMP, PLAYER_SCALE } from '../utils/constants.js';
 
+// Unscaled physics body size (the character art is ~140×200)
+const BODY_W = 60;
+const BODY_H = 150;
+
 export class Player extends Phaser.Physics.Arcade.Sprite {
   constructor(scene, x, y) {
     super(scene, x, y, 'idle');
-    
+
     scene.add.existing(this);
     scene.physics.add.existing(this);
-    
+
+    // Origin at the feet: every pose image has a different height,
+    // so anchoring at the bottom keeps the feet on the grass when swapping.
+    this.setOrigin(0.5, 1);
     this.setScale(PLAYER_SCALE);
+    this.setDepth(10);
     this.setCollideWorldBounds(true);
-    
-    // Physics body — make the collision box smaller than the sprite
-    // Character is about 139x203 at full size, scaled by 0.55 → ~76x111
-    // Use a tighter body
-    this.body.setSize(80, 170);
-    this.body.setOffset(30, 30);
-    
-    this.isJumping = false;
+
     this.currentAnim = 'idle';
-    
+    this.wasOnGround = false;
+    this.landUntil = 0;
+
     this.createAnimations(scene);
+    this.alignBody();
+
+    // Run frames have slightly different sizes — re-align on every frame
+    this.on(Phaser.Animations.Events.ANIMATION_UPDATE, () => this.alignBody());
   }
-  
+
   createAnimations(scene) {
-    // Run animation from spritesheet
     if (!scene.anims.exists('run')) {
       scene.anims.create({
         key: 'run',
-        frames: scene.anims.generateFrameNumbers('run', { start: 0, end: 2 }),
-        frameRate: 8,
+        frames: [{ key: 'run_1' }, { key: 'run_2' }, { key: 'run_3' }],
+        frameRate: 10,
         repeat: -1,
       });
     }
-    
-    // Static pose "animations" (single frame) — use the individual images
-    // For these, we swap the texture directly rather than using anims
   }
-  
-  update(cursors, mobileControls) {
+
+  // Keep the body centred horizontally with its bottom at the sprite's feet
+  alignBody() {
+    const f = this.frame;
+    this.body.setSize(BODY_W, BODY_H, false);
+    this.body.setOffset((f.realWidth - BODY_W) / 2, f.realHeight - BODY_H);
+  }
+
+  update(input) {
     const onGround = this.body.blocked.down || this.body.touching.down;
-    
-    // Determine input
-    const leftPressed = cursors.left.isDown || (mobileControls && mobileControls.left);
-    const rightPressed = cursors.right.isDown || (mobileControls && mobileControls.right);
-    const jumpPressed = cursors.up.isDown || Phaser.Input.Keyboard.JustDown(cursors.space) || (mobileControls && mobileControls.up);
-    
+    const now = this.scene.time.now;
+
     // Horizontal movement
-    if (leftPressed) {
+    if (input.left) {
       this.setVelocityX(-PLAYER_SPEED);
       this.setFlipX(true);
-      if (onGround) this.playAnim('run');
-    } else if (rightPressed) {
+    } else if (input.right) {
       this.setVelocityX(PLAYER_SPEED);
       this.setFlipX(false);
-      if (onGround) this.playAnim('run');
     } else {
       this.setVelocityX(0);
-      if (onGround) this.playAnim('idle');
     }
-    
-    // Jumping
-    if (jumpPressed && onGround) {
+
+    // Jump
+    if (input.jump && onGround) {
       this.setVelocityY(PLAYER_JUMP);
-      this.isJumping = true;
-      this.playAnim('jump');
     }
-    
-    // Air state
+
+    // Pose selection
     if (!onGround) {
-      if (this.body.velocity.y < 0) {
-        this.playAnim('jump');
+      this.playAnim(this.body.velocity.y < 0 ? 'jump' : 'fall');
+    } else {
+      if (!this.wasOnGround) this.landUntil = now + 120; // short landing pose
+      if (now < this.landUntil && !input.left && !input.right) {
+        this.playAnim('land');
+      } else if (input.left || input.right) {
+        this.playAnim('run');
       } else {
-        this.playAnim('fall');
+        this.playAnim('idle');
       }
-    } else if (this.isJumping) {
-      this.isJumping = false;
-      // Brief land animation then back to idle
-      this.playAnim('land');
-      this.scene.time.delayedCall(200, () => {
-        if (this.body.blocked.down) this.playAnim('idle');
-      });
     }
+
+    this.wasOnGround = onGround;
   }
-  
+
   playAnim(key) {
     if (this.currentAnim === key) return;
     this.currentAnim = key;
-    
+
     if (key === 'run') {
-      // Use the spritesheet animation
-      this.setTexture('run');
       this.play('run', true);
     } else {
-      // Use static texture (stop any running animation)
       this.stop();
       this.setTexture(key);
     }
+    this.alignBody();
   }
-  
+
   celebrateAnim() {
     this.playAnim('celebrate');
   }
-  
+
   floatAnim() {
     this.stop();
     this.currentAnim = 'float';

@@ -12,3 +12,6 @@ const config = {
 };
 
 const game = new Phaser.Game(config);
+
+// Dev-only handle for debugging in the browser console
+if (import.meta.env.DEV) window.__game = game;

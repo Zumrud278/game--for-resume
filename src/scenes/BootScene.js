@@ -32,6 +32,13 @@ export class BootScene extends Phaser.Scene {
       progressBar.fillRect(barX + 4, barY + 4, (barW - 8) * value, barH - 8);
     });
 
+    // Remember any asset that fails so a placeholder can be drawn instead
+    this.missing = [];
+    this.load.on('loaderror', (file) => {
+      console.warn(`[Boot] Missing asset "${file.key}" (${file.src}) — using placeholder`);
+      this.missing.push(file.key);
+    });
+
     this.load.on('complete', () => {
       progressBar.destroy();
       bgBar.destroy();
@@ -40,10 +47,10 @@ export class BootScene extends Phaser.Scene {
 
     // ── Characters ──
     this.load.image('idle', 'assets/characters/idle.png');
-    this.load.spritesheet('run', 'assets/characters/run.png', {
-      frameWidth: 144,
-      frameHeight: 193,
-    });
+    // Individual run frames (run.png is 433px wide, which doesn't split evenly)
+    this.load.image('run_1', 'assets/characters/frames/run_1.png');
+    this.load.image('run_2', 'assets/characters/frames/run_2.png');
+    this.load.image('run_3', 'assets/characters/frames/run_3.png');
     this.load.image('jump', 'assets/characters/jump.png');
     this.load.image('fall', 'assets/characters/fall.png');
     this.load.image('land', 'assets/characters/land.png');
@@ -92,6 +99,21 @@ export class BootScene extends Phaser.Scene {
   }
 
   create() {
+    this.missing.forEach((key) => this.makePlaceholder(key));
     this.scene.start('Menu');
+  }
+
+  // Simple temporary texture for a missing image: a soft purple rounded box.
+  makePlaceholder(key) {
+    if (this.textures.exists(key)) this.textures.remove(key);
+    const w = 120;
+    const h = 120;
+    const g = this.make.graphics({ x: 0, y: 0 }, false);
+    g.fillStyle(0x6B3FA0, 0.9);
+    g.fillRoundedRect(0, 0, w, h, 16);
+    g.lineStyle(4, 0xC9A0DC, 1);
+    g.strokeRoundedRect(2, 2, w - 4, h - 4, 14);
+    g.generateTexture(key, w, h);
+    g.destroy();
   }
 }

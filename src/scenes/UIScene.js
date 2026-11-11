@@ -8,24 +8,24 @@ export class UIScene extends Phaser.Scene {
   }
 
   create() {
-    // ── HUD (hearts + level) — top-left ──
-    this.hud = new HUD(this);
-
-    // ── Mobile controls — only on touch devices ──
     const gameScene = this.scene.get('Game');
 
+    this.hud = new HUD(this);
+
+    // Touch devices get on-screen controls (read by GameScene.update)
     if (this.sys.game.device.input.touch) {
       this.mobileControls = new MobileControls(this, gameScene.player);
     }
 
-    // ── Listen for level-up events from GameScene ──
-    gameScene.events.on('levelUp', (n) => {
-      this.hud.setLevel(n);
-    });
+    // Level indicator follows the island the player is standing on
+    const onIsland = (index) => this.hud.setLevel(index);
+    gameScene.events.on('island-changed', onIsland);
 
-    // Clean up listener when this scene shuts down
-    this.events.on('shutdown', () => {
-      gameScene.events.off('levelUp');
+    // Explore Resume — the resume panel is the next build step
+    this.events.on('explore-resume', () => this.hud.toast('Resume panel coming soon ✦'));
+
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      gameScene.events.off('island-changed', onIsland);
     });
   }
 }
