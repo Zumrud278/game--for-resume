@@ -8,9 +8,25 @@ export const WORLD_HEIGHT = 1450;
 
 // ── Player physics ──
 export const GRAVITY = 1100;
-export const PLAYER_SPEED = 280;
-export const PLAYER_JUMP = -640; // peak height ≈ 186px, enough for a 110px step
 export const PLAYER_SCALE = 0.5;
+
+export const PLAYER = {
+  speed: 280,            // max run speed (px/s)
+  groundAccel: 2000,     // px/s² while running on the ground
+  groundDecel: 2600,     // braking when no key is held on the ground
+  airAccel: 1400,        // a little less control in the air
+  airDecel: 700,         // keep some momentum mid-jump
+  jumpVelocity: -640,    // full jump peak ≈ 186px (each step is 110px)
+  jumpCutFactor: 0.45,   // release jump early → shorter hop
+  maxFallSpeed: 900,     // 15px per physics step < platform thickness
+  coyoteMs: 100,         // can still jump just after walking off an edge
+  jumpBufferMs: 120,     // jump pressed just before landing still counts
+  landPoseMs: 110,       // how long the crouch pose shows after landing
+  landPoseMinSpeed: 350, // only crouch after a real drop
+};
+
+// ── Camera ──
+export const CAMERA_LOOKAHEAD = 120; // px shown ahead of her facing direction
 
 // ── Islands ──
 // Stair layout, left → right, each step ~110px higher than the previous.

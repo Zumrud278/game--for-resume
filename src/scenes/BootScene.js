@@ -1,6 +1,8 @@
 import Phaser from 'phaser';
 import { COLORS } from '../utils/constants.js';
 
+const CHARACTER_KEYS = ['idle', 'jump', 'fall', 'land', 'celebrate', 'float', 'run_1', 'run_2', 'run_3'];
+
 export class BootScene extends Phaser.Scene {
   constructor() {
     super({ key: 'Boot' });
@@ -103,17 +105,39 @@ export class BootScene extends Phaser.Scene {
     this.scene.start('Menu');
   }
 
-  // Simple temporary texture for a missing image: a soft purple rounded box.
+  // Simple temporary texture for a missing image.
   makePlaceholder(key) {
     if (this.textures.exists(key)) this.textures.remove(key);
-    const w = 120;
-    const h = 120;
     const g = this.make.graphics({ x: 0, y: 0 }, false);
-    g.fillStyle(0x6B3FA0, 0.9);
-    g.fillRoundedRect(0, 0, w, h, 16);
-    g.lineStyle(4, 0xC9A0DC, 1);
-    g.strokeRoundedRect(2, 2, w - 4, h - 4, 14);
-    g.generateTexture(key, w, h);
+
+    if (CHARACTER_KEYS.includes(key)) {
+      // Character-sized stand-in (same ~140×200 footprint as the real art,
+      // so physics and feet alignment behave identically)
+      const w = 140;
+      const h = 200;
+      g.fillStyle(0x7B3FA0, 1);            // purple cape
+      g.fillRoundedRect(30, 70, 80, 110, 20);
+      g.fillStyle(0xF3E6D0, 1);            // cream outfit
+      g.fillRoundedRect(48, 80, 44, 80, 12);
+      g.fillStyle(0x6B3A1F, 1);            // brown boots
+      g.fillRect(48, 172, 18, 25);
+      g.fillRect(74, 172, 18, 25);
+      g.fillStyle(0x7A4A2A, 1);            // brown hair
+      g.fillCircle(70, 48, 40);
+      g.fillStyle(0xFAD9C1, 1);            // face
+      g.fillCircle(78, 52, 24);
+      g.fillStyle(0x9B4FD0, 1);            // purple bow
+      g.fillTriangle(38, 12, 38, 34, 54, 23);
+      g.fillTriangle(70, 12, 70, 34, 54, 23);
+      g.generateTexture(key, w, h);
+    } else {
+      // Generic soft purple box
+      g.fillStyle(0x6B3FA0, 0.9);
+      g.fillRoundedRect(0, 0, 120, 120, 16);
+      g.lineStyle(4, 0xC9A0DC, 1);
+      g.strokeRoundedRect(2, 2, 116, 116, 14);
+      g.generateTexture(key, 120, 120);
+    }
     g.destroy();
   }
 }

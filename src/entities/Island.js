@@ -22,13 +22,21 @@ export class Island {
       .setScale(config.scale)
       .setDepth(2);
 
-    // Thin solid platform along the grass (narrower than the art so
-    // the player doesn't stand on thin air at the rounded edges)
+    // One-way platform along the grass:
+    //  - narrower than the art so she doesn't stand on air at rounded edges
+    //  - 28px thick, more than the max fall distance per physics step
+    //  - only the TOP collides, so she can jump up through from below and
+    //    never snags on an island's side
     this.collider = null;
     if (solid) {
       const w = this.image.displayWidth * 0.78;
-      this.collider = scene.add.zone(config.x, config.surfaceY + 8, w, 16);
+      const thickness = 28;
+      this.collider = scene.add.zone(config.x, config.surfaceY + thickness / 2, w, thickness);
       scene.physics.add.existing(this.collider, true);
+      const body = this.collider.body;
+      body.checkCollision.down = false;
+      body.checkCollision.left = false;
+      body.checkCollision.right = false;
       this.collider.island = this;
     }
 

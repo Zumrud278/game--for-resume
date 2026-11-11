@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { WORLD_WIDTH, WORLD_HEIGHT, ISLANDS } from '../utils/constants.js';
+import { WORLD_WIDTH, WORLD_HEIGHT, ISLANDS, CAMERA_LOOKAHEAD } from '../utils/constants.js';
 import { Player } from '../entities/Player.js';
 import { Island } from '../entities/Island.js';
 import { ParallaxBackground } from '../effects/ParallaxBackground.js';
@@ -22,6 +22,10 @@ export class GameScene extends Phaser.Scene {
     this.islands = ISLANDS.map((cfg, i) => new Island(this, cfg, i));
     this.destination = new RainbowDestination(this);
 
+    // Left wall sits at the START island's edge so she can't walk off the back
+    const startLeft = this.islands[0].collider.body.left + 10;
+    this.physics.world.setBounds(startLeft, 0, WORLD_WIDTH - startLeft, WORLD_HEIGHT);
+
     this.platforms = this.physics.add.staticGroup();
     [...this.islands, this.destination.island].forEach((island) => {
       if (island.collider) this.platforms.add(island.collider);
@@ -39,12 +43,15 @@ export class GameScene extends Phaser.Scene {
     });
 
     // ── Camera: fixed zoom, smooth follow, clamped to the world ──
+    // Small vertical deadzone so jumps don't make the view bob;
+    // a horizontal look-ahead shows more of where she's heading.
     const cam = this.cameras.main;
     cam.setBounds(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
     cam.setZoom(1);
-    cam.startFollow(this.player, true, 0.1, 0.1, 0, 80); // keep player slightly below centre
-    cam.setDeadzone(160, 100);
+    cam.startFollow(this.player, true, 0.1, 0.08, 0, 60);
+    cam.setDeadzone(40, 140);
     cam.fadeIn(400, 30, 15, 60);
+    this.lookAhead = 0;
 
     // ── Keyboard: arrows + WASD + Space ──
     this.cursors = this.input.keyboard.createCursorKeys();
@@ -65,6 +72,11 @@ export class GameScene extends Phaser.Scene {
       jump: c.up.isDown || c.space.isDown || this.wasd.W.isDown || mobile?.up,
     });
 
+    // Camera look-ahead eases toward the facing direction
+    const target = -this.player.facing * CAMERA_LOOKAHEAD;
+    this.lookAhead = Phaser.Math.Linear(this.lookAhead, target, 0.04);
+    this.cameras.main.followOffset.x = this.lookAhead;
+
     // Fell below the world → back to the last island stood on
     if (this.player.y > WORLD_HEIGHT + 150) this.respawn();
   }
@@ -77,8 +89,7 @@ export class GameScene extends Phaser.Scene {
 
   respawn() {
     const island = ISLANDS[this.currentIsland] || ISLANDS[0];
-    this.player.setVelocity(0, 0);
-    this.player.setPosition(island.x, island.surfaceY - 120);
+    this.player.resetTo(island.x, island.surfaceY - 60);
     this.cameras.main.flash(250, 255, 255, 255, false);
   }
 }
