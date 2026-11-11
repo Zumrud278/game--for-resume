@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { PLAYER_SCALE, COLORS, FONT_FAMILY } from '../utils/constants.js';
-import { RESUME_DATA } from '../config/resumeData.js';
+import { RESUME } from '../data/resume.js';
 
 export class MenuScene extends Phaser.Scene {
   constructor() {
@@ -91,7 +91,7 @@ export class MenuScene extends Phaser.Scene {
       .setScale(0.85);
 
     // Greeting text inside bubble
-    const greeting = RESUME_DATA.greeting || `Hi! I'm ${RESUME_DATA.name}`;
+    const greeting = RESUME.greeting || `Hi! I'm ${RESUME.name}`;
     this.add.text(width / 2, charY - 125, greeting, {
       fontFamily: FONT_FAMILY,
       fontSize: '14px',
@@ -101,7 +101,7 @@ export class MenuScene extends Phaser.Scene {
     }).setOrigin(0.5);
 
     // ── Title ──
-    this.add.text(width / 2, height * 0.12, `${RESUME_DATA.name}'s Adventure`, {
+    this.add.text(width / 2, height * 0.12, `${RESUME.name}'s Adventure`, {
       fontFamily: FONT_FAMILY,
       fontSize: '36px',
       fontStyle: 'bold',

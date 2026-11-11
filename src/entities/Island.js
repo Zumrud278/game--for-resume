@@ -40,20 +40,10 @@ export class Island {
       this.collider.island = this;
     }
 
-    // Floating label above the island
+    // Floating sign above the island: [icon] LABEL
     if (config.label) {
       const labelY = config.surfaceY - this.image.displayHeight * config.grassFrac - 34;
-      this.label = scene.add
-        .text(config.x, Math.min(labelY, config.surfaceY - 150), config.label, {
-          fontFamily: FONT_FAMILY,
-          fontSize: '20px',
-          fontStyle: 'bold',
-          color: '#FFFFFF',
-          stroke: '#2D1B4E',
-          strokeThickness: 5,
-        })
-        .setOrigin(0.5)
-        .setDepth(4);
+      this.label = this.createSign(scene, config, Math.min(labelY, config.surfaceY - 150));
 
       scene.tweens.add({
         targets: this.label,
@@ -64,6 +54,45 @@ export class Island {
         ease: 'Sine.easeInOut',
       });
     }
+  }
+
+  createSign(scene, config, y) {
+    const ICON_H = 34;
+    const PAD_X = 14;
+    const GAP = 8;
+    const H = 46;
+
+    const text = scene.add
+      .text(0, 0, config.label, {
+        fontFamily: FONT_FAMILY,
+        fontSize: '18px',
+        fontStyle: 'bold',
+        color: '#FFFFFF',
+      })
+      .setOrigin(0, 0.5);
+
+    let icon = null;
+    let iconW = 0;
+    if (config.icon && scene.textures.exists(config.icon)) {
+      icon = scene.add.image(0, 0, config.icon).setOrigin(0, 0.5);
+      icon.setScale(ICON_H / icon.height);
+      iconW = icon.displayWidth + GAP;
+    }
+
+    const w = PAD_X * 2 + iconW + text.width;
+    const left = -w / 2;
+    icon?.setPosition(left + PAD_X, 0);
+    text.setPosition(left + PAD_X + iconW, 1);
+
+    const bg = scene.add.graphics();
+    bg.fillStyle(0x2D1B4E, 0.82);
+    bg.fillRoundedRect(left, -H / 2, w, H, H / 2);
+    bg.lineStyle(2, 0xC9A0DC, 1);
+    bg.strokeRoundedRect(left, -H / 2, w, H, H / 2);
+
+    return scene.add
+      .container(config.x, y, [bg, icon, text].filter(Boolean))
+      .setDepth(4);
   }
 
   get width() {

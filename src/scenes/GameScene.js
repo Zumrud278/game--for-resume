@@ -1,9 +1,21 @@
 import Phaser from 'phaser';
-import { WORLD_WIDTH, WORLD_HEIGHT, ISLANDS, CAMERA_LOOKAHEAD } from '../utils/constants.js';
+import {
+  WORLD_WIDTH,
+  WORLD_HEIGHT,
+  ISLANDS,
+  DESTINATION,
+  CAMERA_LOOKAHEAD,
+  BALLOON,
+} from '../utils/constants.js';
 import { Player } from '../entities/Player.js';
 import { Island } from '../entities/Island.js';
 import { ParallaxBackground } from '../effects/ParallaxBackground.js';
 import { RainbowDestination } from '../effects/RainbowDestination.js';
+import { SkyCorridor } from '../effects/SkyCorridor.js';
+import { BalloonJourney } from '../effects/BalloonJourney.js';
+
+// Index used for the rainbow island in island-changed events
+export const DESTINATION_INDEX = ISLANDS.length;
 
 export class GameScene extends Phaser.Scene {
   constructor() {
@@ -21,6 +33,7 @@ export class GameScene extends Phaser.Scene {
     // ── Islands: START → EDUCATION → SKILLS → PROJECTS → ACHIEVEMENTS ──
     this.islands = ISLANDS.map((cfg, i) => new Island(this, cfg, i));
     this.destination = new RainbowDestination(this);
+    this.skyCorridor = new SkyCorridor(this);   // clouds & stars along the balloon route
 
     // Left wall sits at the START island's edge so she can't walk off the back
     const startLeft = this.islands[0].collider.body.left + 10;
@@ -57,20 +70,43 @@ export class GameScene extends Phaser.Scene {
     this.cursors = this.input.keyboard.createCursorKeys();
     this.wasd = this.input.keyboard.addKeys('W,A,D');
 
+    // ── Balloon journey (starts after ACHIEVEMENTS is completed) ──
+    this.journey = new BalloonJourney(this, this.player, this.destination);
+    this.journeyStarted = false;
+    this.achievementTime = 0;
+
     // ── UI overlay (level indicator, buttons, instructions) ──
     this.scene.launch('UI');
   }
 
-  update() {
+  update(time, delta) {
     if (!this.player?.active) return;
 
+    const cam = this.cameras.main;
+    this.background.update(cam.scrollX, cam.scrollY);
+
+    // During the journey the flight is fully scripted
+    if (this.journey.active) {
+      this.journey.update(time);
+      return;
+    }
+
+    // While a resume panel is open, she stands still (keys are ignored)
     const c = this.cursors;
     const mobile = this.scene.get('UI')?.mobileControls;
-    this.player.update({
-      left: c.left.isDown || this.wasd.A.isDown || mobile?.left,
-      right: c.right.isDown || this.wasd.D.isDown || mobile?.right,
-      jump: c.up.isDown || c.space.isDown || this.wasd.W.isDown || mobile?.up,
-    });
+    const input = {
+      left: !!(c.left.isDown || this.wasd.A.isDown || mobile?.left),
+      right: !!(c.right.isDown || this.wasd.D.isDown || mobile?.right),
+      jump: !!(c.up.isDown || c.space.isDown || this.wasd.W.isDown || mobile?.up),
+    };
+    if (this.isPanelOpen()) {
+      this.player.update({ left: false, right: false, jump: false });
+      // A jump key still held when the panel closes must be released and
+      // pressed again — otherwise she'd hop by herself on close
+      this.player.jumpHeld = input.jump;
+    } else {
+      this.player.update(input);
+    }
 
     // Camera look-ahead eases toward the facing direction
     const target = -this.player.facing * CAMERA_LOOKAHEAD;
@@ -79,16 +115,45 @@ export class GameScene extends Phaser.Scene {
 
     // Fell below the world → back to the last island stood on
     if (this.player.y > WORLD_HEIGHT + 150) this.respawn();
+
+    this.checkJourneyTrigger(delta);
+  }
+
+  isPanelOpen() {
+    return !!this.scene.get('UI')?.panel?.isOpen;
+  }
+
+  // Level 4 (Achievements) is complete once she has landed on its island
+  // and the achievements panel has been closed
+  checkJourneyTrigger(delta) {
+    if (this.journeyStarted) return;
+    const onAchievements =
+      this.currentIsland === ISLANDS.length - 1 && this.player.onGround && !this.isPanelOpen();
+    this.achievementTime = onAchievements ? this.achievementTime + delta : 0;
+    if (this.achievementTime >= BALLOON.triggerDelayMs) this.startJourney();
+  }
+
+  startJourney() {
+    if (this.journeyStarted) return;
+    this.journeyStarted = true;
+    this.lookAhead = 0;
+    this.events.emit('journey-start');
+    this.journey.start(() => {
+      this.setCurrentIsland(DESTINATION_INDEX);
+      this.events.emit('journey-complete');
+    });
   }
 
   setCurrentIsland(index) {
     if (this.currentIsland === index) return;
     this.currentIsland = index;
-    this.events.emit('island-changed', index, ISLANDS[index]);
+    this.events.emit('island-changed', index);
   }
 
   respawn() {
-    const island = ISLANDS[this.currentIsland] || ISLANDS[0];
+    const island = this.currentIsland === DESTINATION_INDEX
+      ? DESTINATION
+      : ISLANDS[this.currentIsland] || ISLANDS[0];
     this.player.resetTo(island.x, island.surfaceY - 60);
     this.cameras.main.flash(250, 255, 255, 255, false);
   }

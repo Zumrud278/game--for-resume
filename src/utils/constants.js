@@ -1,10 +1,14 @@
+import { RESUME_SECTIONS } from '../data/resume.js';
+
 // ── Game view (fixed resolution, scaled to fit the window) ──
 export const GAME_WIDTH = 1280;
 export const GAME_HEIGHT = 720;
 
 // ── World dimensions ──
 export const WORLD_WIDTH = 2900;
-export const WORLD_HEIGHT = 1450;
+// Tall world: the climb happens at the bottom, the balloon journey
+// carries her ~1670px straight up to the rainbow island at the top.
+export const WORLD_HEIGHT = 2900;
 
 // ── Player physics ──
 export const GRAVITY = 1100;
@@ -33,30 +37,50 @@ export const CAMERA_LOOKAHEAD = 120; // px shown ahead of her facing direction
 //   x         – horizontal centre of the island
 //   surfaceY  – y of the walkable grass (the player's feet rest here)
 //   grassFrac – where the grass line sits inside the image (0 = top, 1 = bottom)
+// Labels, HUD names and icons come from src/data/resume.js
+const fromResume = (id) => ({
+  id,
+  label: RESUME_SECTIONS[id].islandLabel,
+  hudName: RESUME_SECTIONS[id].title,
+  icon: RESUME_SECTIONS[id].icon,
+});
+
 export const ISLANDS = [
-  { id: 'start',        label: 'START',        x: 240,  surfaceY: 1180, key: 'island',        scale: 1.7,  grassFrac: 0.24 },
-  { id: 'education',    label: 'EDUCATION',    x: 660,  surfaceY: 1070, key: 'island_2',      scale: 2.1,  grassFrac: 0.2  },
-  { id: 'skills',       label: 'SKILLS',       x: 1080, surfaceY: 960,  key: 'island_3',      scale: 2.5,  grassFrac: 0.2  },
-  { id: 'projects',     label: 'PROJECTS',     x: 1500, surfaceY: 850,  key: 'island_4',      scale: 1.95, grassFrac: 0.13 },
-  { id: 'achievements', label: 'ACHIEVEMENTS', x: 1920, surfaceY: 740,  key: 'trophy_island', scale: 1.7,  grassFrac: 0.44 },
+  { id: 'start', label: 'START', hudName: 'Start', icon: 'star', x: 240,  surfaceY: 2630, key: 'island',        scale: 1.7,  grassFrac: 0.24 },
+  { ...fromResume('education'),                                   x: 660,  surfaceY: 2520, key: 'island_2',      scale: 2.1,  grassFrac: 0.2  },
+  { ...fromResume('skills'),                                      x: 1080, surfaceY: 2410, key: 'island_3',      scale: 2.5,  grassFrac: 0.2  },
+  { ...fromResume('projects'),                                    x: 1500, surfaceY: 2300, key: 'island_4',      scale: 1.95, grassFrac: 0.13 },
+  { ...fromResume('achievements'),                                x: 1920, surfaceY: 2190, key: 'trophy_island', scale: 1.7,  grassFrac: 0.44 },
 ];
 
 // ── Final rainbow destination ──
-// Well above the achievements island (≈380px higher) and offset to the right,
-// so it is clearly NOT on the same horizontal line. Reached later via balloons.
+// ~1670px ABOVE the achievements island and offset to the right.
+// Out of jumping reach — the balloon journey carries her up here.
 export const DESTINATION = {
+  id: 'rainbow',
   label: 'RAINBOW',
-  x: 2480,
-  surfaceY: 360,
+  icon: 'star',
+  hudName: 'Rainbow Island',
+  x: 2400,
+  surfaceY: 520,
   key: 'castle_island',
   scale: 1.5,
   grassFrac: 0.53,
 };
 
-// ── Balloon transition ──
-export const BALLOON_START_Y = 680;
-export const BALLOON_END_Y = -200;
-export const BALLOON_DURATION = 4000;
+// ── Balloon journey ──
+export const BALLOON = {
+  triggerDelayMs: 500,   // standing on ACHIEVEMENTS this long starts the journey
+  celebrateMs: 1300,     // celebration before the balloons arrive
+  arriveMs: 1700,        // bouquet floats down to her
+  grabMs: 450,           // she grabs the strings
+  flightMs: 9000,        // the flight itself
+  bouquetScale: 0.9,     // big bouquet (assets/objects/balloons.png)
+  floatScale: 0.55,      // float pose (assets/characters/float.png)
+  // Pixel positions inside the images where the strings meet
+  bouquetKnot: { x: 99, y: 192 },  // balloons.png: knot where strings gather
+  floatHand: { x: 130, y: 170 },   // float.png: her fist holding the strings
+};
 
 // ── Colors ──
 export const COLORS = {

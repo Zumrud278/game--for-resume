@@ -1,4 +1,6 @@
-import { FONT_FAMILY, ISLANDS } from '../utils/constants.js';
+import { FONT_FAMILY, ISLANDS, DESTINATION } from '../utils/constants.js';
+
+const CONTROLS_TEXT = '←  →  or  A  D   Move        ↑  /  W  /  Space   Jump';
 
 const MARGIN = 20;
 
@@ -52,9 +54,19 @@ export class HUD {
     this.setLevel(0);
   }
 
+  // 0 = START, 1–4 = resume levels, ISLANDS.length = rainbow island
   setLevel(index) {
-    this.levelText.setText(`Level ${index + 1} / ${ISLANDS.length}`);
-    this.levelName.setText(ISLANDS[index].label);
+    const levels = ISLANDS.length - 1;
+    if (index === 0) {
+      this.levelText.setText('Start');
+      this.levelName.setText('Begin the journey');
+    } else if (index >= ISLANDS.length) {
+      this.levelText.setText(DESTINATION.hudName + ' ✦');
+      this.levelName.setText('Journey complete!');
+    } else {
+      this.levelText.setText(`Level ${index} / ${levels}`);
+      this.levelName.setText(ISLANDS[index].hudName);
+    }
 
     this.scene.tweens.add({
       targets: this.level,
@@ -87,7 +99,7 @@ export class HUD {
   // ── Bottom: keyboard controls ──
   createInstructions(width, height) {
     const text = this.scene.add
-      .text(width / 2, height - MARGIN - 4, '←  →  or  A  D   Move        ↑  /  W  /  Space   Jump', {
+      .text(width / 2, height - MARGIN - 4, CONTROLS_TEXT, {
         fontFamily: FONT_FAMILY,
         fontSize: '15px',
         color: '#FFFFFF',
@@ -95,17 +107,25 @@ export class HUD {
       .setOrigin(0.5, 1)
       .setDepth(151);
 
+    this.instructions = text;
+    this.instructionsBg = this.scene.add.graphics().setDepth(150);
+    this.drawInstructionsBg();
+  }
+
+  drawInstructionsBg() {
+    const t = this.instructions;
     const padX = 22;
     const padY = 8;
-    const bg = this.scene.add.graphics().setDepth(150);
+    const bg = this.instructionsBg;
+    bg.clear();
     bg.fillStyle(0x2D1B4E, 0.7);
-    bg.fillRoundedRect(
-      text.x - text.width / 2 - padX,
-      text.y - text.height - padY,
-      text.width + padX * 2,
-      text.height + padY * 2,
-      12
-    );
+    bg.fillRoundedRect(t.x - t.width / 2 - padX, t.y - t.height - padY, t.width + padX * 2, t.height + padY * 2, 12);
+  }
+
+  // Swap the bottom bar text (e.g. during the balloon journey)
+  setInstructions(message = CONTROLS_TEXT) {
+    this.instructions.setText(message);
+    this.drawInstructionsBg();
   }
 
   // Small temporary message under the top bar

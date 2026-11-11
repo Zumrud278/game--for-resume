@@ -25,6 +25,13 @@ export class ParallaxBackground {
     sky.fillGradientStyle(COLORS.skyMid, COLORS.skyMid, COLORS.skyBottom, COLORS.skyBottom, 1);
     sky.fillRect(0, half, GAME_WIDTH, GAME_HEIGHT - half);
 
+    // ── High-altitude glow: a warm rose-gold sky that fades in as the
+    //    camera climbs toward the rainbow island ──
+    this.highSky = scene.add.graphics().setScrollFactor(0).setDepth(-29).setAlpha(0);
+    this.highSky.fillGradientStyle(0x2A1460, 0x2A1460, 0xFFB3D1, 0xFFC98A, 1);
+    this.highSky.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+    this.maxScrollY = WORLD_HEIGHT - GAME_HEIGHT;
+
     // Visible span of a layer = screen + how far that layer scrolls
     const span = (factor) => ({
       w: GAME_WIDTH + (WORLD_WIDTH - GAME_WIDTH) * factor,
@@ -92,6 +99,10 @@ export class ParallaxBackground {
     }
   }
 
-  // Kept for API compatibility — layers scroll via scrollFactor
-  update() {}
+  // Layers scroll by themselves (scrollFactor); only the altitude glow
+  // needs updating: 0 near the islands, up to 0.7 at the very top.
+  update(scrollX, scrollY) {
+    const altitude = 1 - scrollY / this.maxScrollY;
+    this.highSky.setAlpha(Phaser.Math.Clamp((altitude - 0.3) / 0.6, 0, 1) * 0.7);
+  }
 }

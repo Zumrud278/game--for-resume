@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { COLORS, FONT_FAMILY } from '../utils/constants.js';
-import { RESUME_DATA } from '../config/resumeData.js';
+import { RESUME } from '../data/resume.js';
 
 export class ContactScene extends Phaser.Scene {
   constructor() {
@@ -157,12 +157,12 @@ export class ContactScene extends Phaser.Scene {
     // Divide the social bar into 4 clickable zones (evenly split)
     const barBounds = socialBar.getBounds();
     const zoneW = barBounds.width / 4;
-    const contact = RESUME_DATA.contact || {};
+    const contact = RESUME.contact || {};
     const links = [
       { label: 'GitHub', url: contact.github },
       { label: 'LinkedIn', url: contact.linkedin },
       { label: 'Email', url: contact.email ? `mailto:${contact.email}` : null },
-      { label: 'Resume', url: contact.resume },
+      { label: 'Resume', url: contact.resumePdf },
     ];
 
     links.forEach((link, i) => {
