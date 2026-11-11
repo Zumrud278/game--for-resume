@@ -64,8 +64,9 @@ export const DESTINATION = {
   x: 2400,
   surfaceY: 520,
   key: 'castle_island',
-  scale: 1.5,
+  scale: 1.25,          // small fantasy castle under a large rainbow
   grassFrac: 0.53,
+  landingX: 2380,       // where the balloons set her down (the landing platform)
 };
 
 // ── Balloon journey ──

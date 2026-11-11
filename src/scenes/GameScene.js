@@ -74,6 +74,7 @@ export class GameScene extends Phaser.Scene {
     this.journey = new BalloonJourney(this, this.player, this.destination);
     this.journeyStarted = false;
     this.achievementTime = 0;
+    this.restarting = false;
 
     // ── UI overlay (level indicator, buttons, instructions) ──
     this.scene.launch('UI');
@@ -119,8 +120,22 @@ export class GameScene extends Phaser.Scene {
     this.checkJourneyTrigger(delta);
   }
 
+  // Resume panel or ending card open → game input is paused
   isPanelOpen() {
-    return !!this.scene.get('UI')?.panel?.isOpen;
+    const ui = this.scene.get('UI');
+    return !!(ui?.panel?.isOpen || ui?.ending?.isOpen);
+  }
+
+  // "Play again": fade out and start over from the START island
+  restartGame() {
+    if (this.restarting) return;
+    this.restarting = true;
+    const cam = this.cameras.main;
+    cam.fadeOut(600, 30, 15, 60);
+    cam.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
+      this.scene.stop('UI');
+      this.scene.restart();
+    });
   }
 
   // Level 4 (Achievements) is complete once she has landed on its island

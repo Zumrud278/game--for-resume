@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { HUD } from '../ui/HUD.js';
 import { MobileControls } from '../ui/MobileControls.js';
 import { InfoPanel } from '../ui/InfoPanel.js';
+import { EndingPanel } from '../ui/EndingPanel.js';
 import { ISLANDS } from '../utils/constants.js';
 import { RESUME_SECTIONS } from '../data/resume.js';
 
@@ -23,6 +24,9 @@ export class UIScene extends Phaser.Scene {
     // Resume information panel (HTML overlay)
     this.panel = new InfoPanel();
 
+    // Ending on the rainbow island: quote + contact card
+    this.ending = new EndingPanel({ onRestart: () => gameScene.restartGame() });
+
     // Reaching an island: update the level badge and show its resume info
     const onIsland = (index) => {
       this.hud.setLevel(index);
@@ -33,7 +37,10 @@ export class UIScene extends Phaser.Scene {
 
     // Balloon journey: controls are paused, so say what's happening
     const onJourneyStart = () => this.hud.setInstructions('✦  The balloons are carrying you to the Rainbow…  ✦');
-    const onJourneyEnd = () => this.hud.setInstructions();
+    const onJourneyEnd = () => {
+      this.hud.setInstructions();
+      this.ending.play();
+    };
     gameScene.events.on('journey-start', onJourneyStart);
     gameScene.events.on('journey-complete', onJourneyEnd);
 
@@ -45,6 +52,7 @@ export class UIScene extends Phaser.Scene {
       gameScene.events.off('journey-start', onJourneyStart);
       gameScene.events.off('journey-complete', onJourneyEnd);
       this.panel.destroy();
+      this.ending.destroy();
     });
   }
 }

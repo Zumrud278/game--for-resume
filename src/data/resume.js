@@ -76,13 +76,17 @@ export const RESUME = {
     },
   ],
 
-  // Not provided yet — fill these in to enable the links
+  // Contact panel on the rainbow island. Set any value to null to show
+  // a "to add" placeholder instead of a button.
   contact: {
-    github: null,     // e.g. 'https://github.com/your-username'
-    linkedin: null,   // e.g. 'https://www.linkedin.com/in/your-profile'
-    email: null,      // e.g. 'you@example.com'
-    resumePdf: null,  // e.g. 'assets/resume.pdf'
+    email: 'zismayilova167@gmail.com',
+    github: 'https://github.com/Zumrud278',
+    linkedin: 'https://www.linkedin.com/in/zumrud-ismayilova-427bb9382',
+    resumePdf: null,  // not provided yet — e.g. 'assets/resume.pdf'
   },
+
+  // Shown when she lands on the rainbow island
+  endingQuote: ["This is not the end of my journey.", "It's just the beginning."],
 };
 
 // Quick lookup: RESUME_SECTIONS.education, RESUME_SECTIONS.skills, …

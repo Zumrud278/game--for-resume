@@ -156,7 +156,7 @@ export class BalloonJourney {
 
     const sx = p.x;
     const sy = p.y;
-    const dx = DESTINATION.x - 20;   // touchdown in front of the castle gate
+    const dx = DESTINATION.landingX; // touchdown on the landing platform
     const dy = DESTINATION.surfaceY;
     const H = sy - dy;
     // Stay left of the floating rock until she's above its grass line
@@ -248,20 +248,8 @@ export class BalloonJourney {
     const cam = scene.cameras.main;
     scene.tweens.add({ targets: cam.followOffset, y: 60, duration: 1500, ease: 'Sine.easeInOut' });
 
-    const msg = scene.add
-      .text(p.x, p.y - 160, 'Welcome to the Rainbow! ✦', {
-        fontFamily: 'Georgia, serif',
-        fontSize: '26px',
-        fontStyle: 'bold',
-        color: '#FFFFFF',
-        stroke: '#6B3FA0',
-        strokeThickness: 6,
-      })
-      .setOrigin(0.5)
-      .setDepth(30)
-      .setAlpha(0);
-    scene.tweens.add({ targets: msg, alpha: 1, y: msg.y - 20, duration: 600, ease: 'Sine.easeOut' });
-    scene.tweens.add({ targets: msg, alpha: 0, delay: 3200, duration: 800, onComplete: () => msg.destroy() });
+    // Light up the landing platform (the ending text is shown by the UI)
+    this.destination.onLanded?.();
 
     // Hand control back: physics on, standing on the castle island
     scene.time.delayedCall(1400, () => {

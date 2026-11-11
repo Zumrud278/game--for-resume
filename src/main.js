@@ -4,11 +4,10 @@ import { BootScene } from './scenes/BootScene.js';
 import { MenuScene } from './scenes/MenuScene.js';
 import { GameScene } from './scenes/GameScene.js';
 import { UIScene } from './scenes/UIScene.js';
-import { ContactScene } from './scenes/ContactScene.js';
 
 const config = {
   ...GAME_CONFIG,
-  scene: [BootScene, MenuScene, GameScene, UIScene, ContactScene],
+  scene: [BootScene, MenuScene, GameScene, UIScene],
 };
 
 const game = new Phaser.Game(config);
