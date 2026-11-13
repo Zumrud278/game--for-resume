@@ -739,3 +739,569 @@ game--for-resume/
 | Balloon journey | 18 / 18 |
 | Resume panels | 27 / 27 |
 | Ending, contact buttons & restart | 24 / 24 |
+
+
+---
+---
+
+# 📅 Session 2 — 13 November 2026
+
+*Appended on 13 November 2026. Everything above this line is the earlier
+session (11 November 2026) and has been left exactly as it was.*
+
+Same format as above: your messages are copied **exactly as you sent them**,
+each reply is the final answer I gave in that turn, and **"Work done"** (click to
+expand) summarises what happened behind the scenes.
+
+### Contents (Session 2)
+
+9. [Turn 9 — Clean up the start screen](#turn-9--clean-up-the-start-screen)
+10. [Turn 10 — Character size & proportions](#turn-10--character-size--proportions)
+11. [Turn 11 — Two-tier level layout](#turn-11--two-tier-level-layout)
+12. [Turn 12 — Pixel-art bridges](#turn-12--pixel-art-bridges)
+13. [Turn 13 — Nodes farther apart](#turn-13--nodes-farther-apart)
+14. [Turn 14 — Collectible stars](#turn-14--collectible-stars)
+15. [Turn 15 — Step 3.1: a much bigger world + the balloon ride](#turn-15--step-31-a-much-bigger-world--the-balloon-ride)
+16. [Turn 16 — Append today's chat (this entry)](#turn-16--append-todays-chat-this-entry)
+
+---
+
+## Turn 9 — Clean up the start screen
+
+### 👤 You
+
+> NOW
+> Make only these changes:
+> 1. Delete the speech bubble completely.
+> 2. Delete the yellow title/banner that says "Welcome Zumrud's Adventure".
+> 3. Adjust the remaining elements so the starting screen looks clean and balanced.
+>
+> Do not change the background, character, level positions, or other game mechanics yet.
+>
+> After completing the changes, check that the website still works.
+
+<details>
+<summary><b>Work done</b></summary>
+
+- Took a "before" screenshot. The bubble image already had "Hi! I'm Zumrud. Welcome to my journey!" printed into it, *and* the code drew a second greeting on top, so it looked doubled.
+- `MenuScene.js`: removed the bubble, its greeting text and the "Zumrud's Adventure" title. Moved the character to the centre of the sky (68% → 50% of the screen height) and the Start button to 82%.
+- `BootScene.js`: stopped loading the speech-bubble image.
+- Deleted the unused `src/ui/SpeechBubble.js`. The image file `assets/ui/speech-bubble.png` was kept.
+- Ran all four test suites on a GitHub Pages–style server: 27 + 18 + 27 + 24 checks passed, and the build passed.
+
+</details>
+
+### 🤖 Claude
+
+I removed the speech bubble and the yellow "Zumrud's Adventure" title, and rebalanced the start screen. The website still works: the Start button opens the game with no errors, and all four test suites pass on a test server set up like GitHub Pages.
+
+**Start screen now**
+- **Character:** she's centred in the open sky, still gently floating up and down.
+- **Start button:** it sits below her inside the bottom sky band and still pulses.
+- **Unchanged:** the background, stars, clouds, sparkles and bottom sky band.
+
+**What I changed**
+| File | Change |
+|---|---|
+| `src/scenes/MenuScene.js` | Removed the speech bubble, its greeting text and the yellow title. Moved the character up to the centre (from 68% to 50% of the screen height) and the Start button up slightly (from 88% to 82%). |
+| `src/scenes/BootScene.js` | Stopped loading the speech-bubble image, since nothing shows it anymore. |
+| `src/ui/SpeechBubble.js` | Deleted. It was an old speech-bubble component that nothing in the game used. |
+
+**Things you should know**
+- The bubble image itself had "Hi! I'm Zumrud. Welcome to my journey!" printed into it, and the code also drew a second greeting on top. That's why it looked doubled. Both are gone now.
+- Your original image file `assets/ui/speech-bubble.png` is still in the project, just unused.
+- The character's look, the island positions and the game mechanics are untouched.
+
+**Checks**
+- **Build:** the production build passes.
+- **Start:** clicking Start opens the game, with no browser errors.
+- **Full game, on a GitHub Pages–style server:** movement 27/27, balloon journey 18/18, resume panels 27/27, ending and contact buttons 24/24.
+
+Nothing is committed. To publish, commit and push these three files as before.
+
+---
+
+## Turn 10 — Character size & proportions
+
+### 👤 You
+
+> Now improve the girl character's size and proportions.
+>
+> 1. Adjust her height and width to fit the pixel-art game environment.
+> 2. Make her look proportional to the platforms, nodes, bridges, and stars.
+> 3. Ensure her feet align naturally with the ground and platforms.
+> 4. Make sure her walking and jumping animations look natural.
+> 5. Keep her original visual style and appearance.
+>
+> Do not redesign the character or change the environment. Only adjust her proportions and positioning.
+
+<details>
+<summary><b>Work done</b></summary>
+
+- Measured every pose image. Her body is drawn at the same size in each, but the images are padded differently, so she slid sideways by up to 30px when changing poses.
+- Compared three sizes in the game (scale 0.50, 0.56, 0.62) next to the islands and the trophy, and chose **0.60** (about 118px tall).
+- `Player.js`:
+  - a per-pose anchor at her torso, mirrored when she faces left (Phaser flips images around their centre)
+  - feet sunk 5px into the grass (visual only)
+  - the run animation's speed follows her real speed
+- `BalloonJourney.js`: the hand and bouquet follow her new size and anchor. `MenuScene.js`: kept her start-screen size unchanged.
+- Measured from screenshots: the torso shift across 16 pose/facing combinations went from 30px to within ±3px, and her boots sit 2–3px into the grass.
+- All four suites passed (96 checks).
+
+</details>
+
+### 🤖 Claude
+
+She's now 20% larger in the game, her feet sit naturally in the grass, and she no longer slides sideways when changing poses. Her art itself is unchanged. All 96 game checks pass and the build passes.
+
+**1. Size**
+- I compared her at three sizes next to the START island and the trophy. At the old size she looked small next to the island flowers and the trophy.
+- She's now about **118px tall** (scale 0.50 → 0.60), with height and width scaled together so her proportions and style stay the same.
+- She now looks right against the islands, the trophy and the castle, whose door is about her height, and there's still plenty of room on each platform.
+- Jump height and the gaps between islands are unchanged, so every jump works exactly as before.
+
+**2. Feet on the ground**
+- Before, her boots sat on the very top edge of the grass.
+- Now they're drawn about 2–3px into the grass, so she stands *on* it.
+- This is visual only: her collision box still rests exactly on the platform, so landing and collisions behave identically.
+
+**3. Natural animation (the biggest fix)**
+Your pose images are padded differently. In the jump pose, for example, the cape trails to the left, so her body isn't centred in the image. Because every pose was anchored at its image centre, she jumped sideways whenever the pose changed. I measured where her torso is in each image and anchor every pose there instead:
+
+| | Before | After |
+|---|---|---|
+| Sideways shift between poses (16 pose/facing combinations, measured from screenshots) | up to **30px** | within **±3px** |
+
+- While facing left, the anchor point is mirrored too, so turning around doesn't move her.
+- The running animation now speeds up and slows down with her actual speed, so her feet don't slide when she starts or stops.
+
+**4. Balloon flight**
+- The bouquet scales with her, and her float pose is matched to her new size.
+- Her hand still holds the knot exactly (measured gap: 0.000px), and the flight remains smooth.
+
+**Files changed**
+| File | Change |
+|---|---|
+| `src/utils/constants.js` | Her scale 0.5 → 0.6; the balloon sizes now follow her scale |
+| `src/entities/Player.js` | Anchor point for each pose, mirrored when facing left; feet sunk slightly into the grass; running speed matched to her movement |
+| `src/effects/BalloonJourney.js` | Hand and balloon positions follow her new size and anchor |
+| `src/scenes/MenuScene.js` | Her size on the start screen is fixed at what it was, so the screen you just approved doesn't change |
+
+**Things you should know**
+- Your request mentioned nodes and bridges, but the game doesn't have any, so I compared her against the islands, flowers, trophy, castle and stars.
+- Islands, background, stars and the rest of the game mechanics are unchanged.
+- Nothing is committed yet.
+
+---
+
+## Turn 11 — Two-tier level layout
+
+### 👤 You
+
+> I want to reorganize the level layout to look like a real 2D platform adventure game.
+>
+> Change the positions as follows:
+>
+> 1. Place the first THREE level nodes on the SAME horizontal height (same ground/platform level).- including start level too
+> 2. Place the next TWO level nodes HIGHER than the first three.
+> 3. Create a natural upward progression between these levels.
+> 4. Make the distances between nodes large enough for the girl character to jump between them.
+> 5. Keep the layout visually balanced and connected.
+>
+> Important: Do not arrange all five nodes in one straight horizontal line. I want the first three at the same height and the last two at a higher elevation.
+
+<details>
+<summary><b>Work done</b></summary>
+
+- Calculated her jump limits: 186px high, about 326px across on a level jump, and 260px across when jumping 120px up.
+- `constants.js`: START, EDUCATION and SKILLS at the same height with 180px gaps; PROJECTS one 120px step up; ACHIEVEMENTS one more step up (170px gaps). Added named `GROUND` and `STEP` values.
+- Measured the real gaps in the game and confirmed no island art overlaps.
+- All four suites passed (96 checks), including a real-keyboard climb across every gap.
+
+</details>
+
+### 🤖 Claude
+
+The islands now use a two-level layout. START, EDUCATION and SKILLS share one ground level, then PROJECTS and ACHIEVEMENTS climb higher. I checked every jump with real key presses: all 96 game checks pass, and the build passes.
+
+**New layout**
+```
+                                                      [ACHIEVEMENTS]   ← 2 steps up
+                                       [PROJECTS]                      ← 1 step up
+[START]       [EDUCATION]       [SKILLS]                               ← ground level
+```
+
+| Island | Height | Gap from previous island | Jump needed |
+|---|---|---|---|
+| START | ground level | — | — |
+| EDUCATION | ground level | 180px | level jump |
+| SKILLS | ground level | 180px | level jump |
+| PROJECTS | 120px higher | 170px | upward jump |
+| ACHIEVEMENTS | 240px higher | 170px | upward jump |
+
+- **The first three really are level:** their grass is at exactly the same height. You can see this from the start position, where all three islands and their signs line up.
+- **The last two are higher:** each is one 120px step above the previous island, so the climb feels natural instead of a sudden jump.
+- **Every gap is jumpable:**
+  - She can jump 186px high and about 326px across on a level jump, or about 260px across when jumping 120px up.
+  - The gaps use roughly 55–65% of that, so each one is a real jump but not a hard one.
+  - The test climbed all five islands with real key presses and landed exactly on each one.
+- **Balanced:** none of the islands' art overlaps, the signs float evenly above each island, and the camera keeps her well framed through the whole climb.
+
+**Still working**
+- **Resume panels:** they open on Levels 1–4 as before.
+- **Balloon journey:** the rainbow island is now 1,870px above ACHIEVEMENTS, up from 1,670px, because ACHIEVEMENTS sits a little lower. The flight still takes 9 seconds and stays smooth.
+- **Ending and contact buttons:** all checks pass.
+
+**What changed**
+
+Only the island positions in `src/utils/constants.js`. The height of the ground level and the size of each step are now two named values at the top of the layout (`GROUND` and `STEP`), so you can adjust the layout easily later. The islands' art, the background, the character and the movement are unchanged.
+
+Nothing is committed yet.
+
+---
+
+## Turn 12 — Pixel-art bridges
+
+### 👤 You
+
+> Add visible pixel-art bridges connecting consecutive level nodes.
+>
+> Connect the first three nodes horizontally with bridges.
+>
+> Create upward-sloping or appropriately positioned bridges connecting the third node to the fourth and the fourth to the fifth.
+>
+> Bridges must physically connect to both nodes without visible gaps.
+>
+> Make bridges wide and long enough for the girl character to walk and jump across.
+>
+> Ensure the character can stand and move on the bridges without falling through them.
+>
+> Use a wooden or visually suitable pixel-art bridge design that matches the existing environment.
+
+<details>
+<summary><b>Work done</b></summary>
+
+- There are no bridge images in your assets, so the art is drawn in code.
+- New `src/entities/Bridge.js`: chunky planks with a sunlit top face and wood grain, a beam underneath, posts, and a sagging rope rail with hangers.
+- Phaser's simple physics has no slopes, so each bridge is a walking line that holds her feet on the deck. It's one-way, like the islands.
+- New bridge test (21 checks): walking up and down every bridge, standing still, jumping, falling at full speed, and jumping up through a bridge from below.
+- Bugs found and fixed while testing:
+  1. **Falling through an island:** the deck overlap dipped below the lower island, so walking down off a slope could drop her through it. The walking line and the drawn deck are now separate.
+  2. **Downhill:** stepping onto a downhill slope from an island sometimes started a fall.
+  3. **Slow frames:** a slow frame could let her pass through a bridge. The check now runs after every physics step, and passes even with the CPU throttled 6×.
+  4. **Restart crash:** "Play again" crashed (a cleanup ran after the physics world was destroyed). Fixed.
+- Final result: 117 checks across five suites passed.
+
+</details>
+
+### 🤖 Claude
+
+The four wooden bridges are in, and she can walk, stand and jump on them without falling through. All five test suites pass (117 checks), including at 6× CPU throttling and after "Play again", and the build passes.
+
+**The bridges**
+```
+                                                     [ACHIEVEMENTS]
+                                                  ╱  (sloped bridge)
+                                      [PROJECTS]
+                                   ╱  (sloped bridge)
+[START] ═══════ [EDUCATION] ═══════ [SKILLS]
+        (level)              (level)
+```
+- **Look:** chunky pixel-art planks with a sunlit top, wood grain and dark edges, resting on a dark beam. Each bridge has a wooden post at each end and a sagging rope rail with hangers. The colours are warm browns and tan to match the islands. You have no bridge image, so these are drawn in code.
+- **Connected:** each deck reaches onto the grass at both ends and the posts stand on the islands, so there are no gaps. The two level bridges join START, EDUCATION and SKILLS; the two sloped bridges climb to PROJECTS and then ACHIEVEMENTS.
+- **Wide enough:** each bridge spans the full 170–180px gap, and she walks across at normal speed.
+
+**How they behave**
+
+The game's physics engine has no slopes, so each bridge has its own walkable surface that holds her feet exactly on the deck.
+- **Walking:** going up and down every bridge, her feet stayed exactly on the deck (0px off) with no fall-pose flicker on the downhill slopes.
+- **Standing still:** she doesn't sink or slide on any bridge, including the slopes.
+- **Jumping:** she can jump on a bridge and lands back on the deck. Jumping over the gaps from island to island still works too.
+- **Falling at full speed:** she lands on every bridge without passing through.
+- **One-way:** like the islands, she can jump up through a bridge from below and land on top.
+
+**Three bugs I caught while testing, all in the new bridge code and all fixed**
+1. **Falling through an island:** walking down off a slope could leave her feet inside the lower island's platform. Now the walking surface meets each island at exactly the island's height.
+2. **Stepping onto a downhill slope:** walking from an island onto the top of a downhill slope sometimes started a fall, depending on frame timing.
+3. **Slow frames:** a slow frame could let her pass through a bridge. The bridge check now runs after every physics step, so it holds even with the CPU throttled 6×. It also briefly broke "Play again", which I fixed and re-tested.
+
+**Files changed**
+| File | Change |
+|---|---|
+| `src/entities/Bridge.js` (new) | The bridge art (planks, beam, posts, rope) and its walkable surface |
+| `src/scenes/GameScene.js` | Creates a bridge between each pair of neighbouring islands, and keeps her standing on the bridges |
+
+Islands, character, background, panels, balloon journey and ending are unchanged. Nothing is committed yet.
+
+---
+
+## Turn 13 — Nodes farther apart
+
+### 👤 You
+
+> Increase the distance between all consecutive level nodes significantly.
+>
+> - Move the nodes farther apart horizontally and vertically.
+> - Keep the first three nodes at the same height.
+> - Position the fourth and fifth nodes higher.
+> - Do not change the order of the levels.
+> - Make the overall adventure map larger.
+>
+> **: I want the actual nodes to be farther apart, not just their connecting bridges. It will be good if you can asnwer quickly too
+
+<details>
+<summary><b>Work done</b></summary>
+
+- `constants.js`: gaps of 180px → 320px and steps of 120px → 200px. Island x positions are now chained from a single `GAP` value. The world grew from 2,900px to 3,600px wide, and the rainbow island moved right (x 2400 → 3150).
+- Bridges stretch automatically. Measured gaps came out at 319–320px with 200px rises, and no art overlaps.
+- Bridge, journey and movement suites passed (21 + 18 + 27).
+
+</details>
+
+### 🤖 Claude
+
+I moved the islands much farther apart and made the map bigger; the bridges stretch automatically to match. The bridge (21/21), balloon journey (18/18) and movement (27/27) tests all pass, and the build passes.
+
+| | Before | Now |
+|---|---|---|
+| Horizontal gap between islands | 170–180px | **320px** (every gap) |
+| Height of each step up | 120px | **200px** |
+| Map width | 2,900px | **3,600px** |
+
+- **Same order and layout as before:** START, EDUCATION and SKILLS on one level, then PROJECTS and ACHIEVEMENTS each one step higher.
+- **Bridges:** the two ground bridges are now longer, and the two sloped bridges are longer and steeper. She walks up and down all of them without falling through.
+- **Jumping:** the gaps are now too wide to jump across without a bridge (her longest jump is about 326px on the level and less going up). The bridges are the way across.
+- **Rainbow island:** it moved right with the map (x 2400 → 3150) and is still about 1,700px above ACHIEVEMENTS. The balloon flight path adjusts automatically.
+
+To tweak the spacing later, change the `GAP` and `STEP` values at the top of the layout section in `src/utils/constants.js`; everything else follows. That's the only file I changed. Nothing is committed yet.
+
+---
+
+## Turn 14 — Collectible stars
+
+### 👤 You
+
+> Now add collectible stars throughout the expanded adventure route.
+>
+> - Place multiple stars along the longer bridges.
+> - Distribute them across the entire journey between nodes.
+> - Place some stars at different heights to encourage jumping.
+> - Make stars disappear with a collection animation when the girl touches them.
+> - Add a visible star counter.
+> - Each star should only be collected once.
+>
+> Make collecting stars part of travelling through the game, not a separate activity.
+
+<details>
+<summary><b>Work done</b></summary>
+
+- New `src/entities/Stars.js`, using your `star.png`. It places a trail of 4 stars on each bridge at chest height, a bonus star high above each bridge's middle (needs a jump), and one star on each of the first four islands: 24 in total.
+- Collect animation: the star pops, spins, floats up and fades, with a sparkle burst. Each star can only be collected once.
+- `HUD.js` and `UIScene.js`: a "★ n / 24" counter under the level badge, which pulses on each star and turns gold when complete.
+- New star test (9 checks): walking collects exactly the walking-height stars, jumps collect the bonus ones, nothing is collected twice, and restart resets the counter. The other five suites still passed (117 checks).
+
+</details>
+
+### 🤖 Claude
+
+I've added collectible stars along the route. The star tests pass (9/9), the other five suites still pass (117 checks), and the build passes.
+
+**Where the stars are (24 in total)**
+- **On every bridge:** a trail of 4 stars at her chest height. She collects them just by walking across, with no detour (16 stars).
+- **Bonus stars:** one floats high above the middle of each bridge. Walking won't reach it; she has to jump. These have a slightly warmer glow (4 stars).
+- **On the islands:** one star beside the sign on each of the first four islands (4 stars).
+
+**How they work**
+- They use your `star.png` art and bob and twinkle gently, each slightly out of step with the others.
+- When she touches one, it pops bigger, spins, floats up and fades, with a small sparkle burst, then it's removed.
+- **Counter:** a "★ 0 / 24" pill sits under the level badge. It pulses with each star and gets a gold border at 24 / 24.
+- **Collected once:** walking back over the route doesn't add anything.
+- **Fresh start:** "Play again" brings all the stars back and resets the counter.
+
+**Tested with real key presses**
+- Walking START → ACHIEVEMENTS without jumping collected exactly the 20 walking-height stars and none of the bonus ones.
+- Jumping under each bonus star collected all 4, for 24 / 24.
+- Walking all the way back left the count at 24.
+- The collect animation plays and the star is removed afterwards.
+
+**Files**
+| File | Change |
+|---|---|
+| `src/entities/Stars.js` (new) | Placing the stars, detecting touches, and the collect animation |
+| `src/scenes/GameScene.js` | Creates the stars and checks them each frame |
+| `src/ui/HUD.js`, `src/scenes/UIScene.js` | The star counter |
+
+`src/utils/constants.js` also shows as changed in git. That's the wider-map change from last time, which isn't committed yet. Nothing is committed.
+
+---
+
+## Turn 15 — Step 3.1: a much bigger world + the balloon ride
+
+### 👤 You
+
+> ### STEP 3.1 — Dramatically increase the distance between nodes
+>
+> I want MUCH BIGGER distances between all level nodes. The current spacing is still too small.
+>
+> 1. Move every consecutive node significantly farther away from the previous one.
+> 2. Increase both horizontal and vertical distances where appropriate.
+> 3. Make the distance between nodes at least 2–3 times larger than it is currently.
+> 4. Create long travel sections so the girl has to walk and jump for a noticeable amount of time before reaching the next node.
+> 5. Do not cluster the nodes together.
+> 6. Keep the first three nodes at the same horizontal height and the last two at a higher elevation.
+> 7. Expand the actual game world to accommodate these distances.
+>
+> IMPORTANT:
+> - Do not just increase the bridge length while keeping the nodes close.
+> - Actually reposition the nodes much farther apart.
+> - Do not scale down the map to fit everything on one screen.
+> - Implement camera scrolling so the player can explore the expanded world.
+>
+> I want the journey between levels to feel like travelling through a large adventure world, not taking a few steps between nearby nodes.
+
+### 👤 You (sent while I was still working on Step 3.1)
+
+> Now implement the balloon interaction.
+>
+> When the girl reaches the area after the Project level:
+>
+> 1. She should naturally approach and grab/hold the balloon.
+> 2. The balloon should visibly attach to her hand.
+> 3. When the player presses the UP ARROW key on the keyboard, the girl should rise gradually while holding the balloon.
+> 4. When the player releases the UP ARROW key, the upward movement should stop or pause naturally.
+> 5. Allow the player to control her ascent using the keyboard.
+> 6. Make her movement smooth and realistic.
+> 7. Make sure the balloon remains visually attached to her hand throughout the movement.
+>
+> The balloon should help the girl travel upward toward the Achievement level.
+>
+> Important: Do not simply teleport the girl to the higher level. I want to control her upward movement using my PC keyboard arrows.
+
+<details>
+<summary><b>Work done</b></summary>
+
+- **Bigger world:**
+  - gaps of 320px → **900px**, the step to PROJECTS of 200px → **360px**
+  - the world grew to **6,000 × 3,600px**
+  - each crossing became `[node] ══bridge══ (rock) ~~ 200px jump ~~ (rock) ══bridge══ [node]`, with stepping rocks made from `island_3`
+  - falling now respawns her on the last platform she stood on
+  - background star and cloud density scales with the world size
+- **Balloon ride:**
+  - new `src/entities/BalloonRide.js`
+  - the last crossing became PROJECTS → bridge → a launch rock with a balloon tied to a post
+  - ACHIEVEMENTS sits **700px** above PROJECTS
+  - ↑ rises, releasing ↑ eases to a hover, ← → drift, ↓ descends
+  - there's a ceiling just above ACHIEVEMENTS
+  - landing on ACHIEVEMENTS lets go; landing anywhere else returns the balloon to its post
+  - `Player.handPoint()` keeps the knot in her fist
+- **Stars:** now 54, including arcs over the jump gaps that follow her real jump path, and a trail through the sky along the balloon route.
+- **Bugs fixed while testing:**
+  - The star arcs first followed a generic curve, so jumps could pass under them. They now trace her actual jump path.
+  - The balloon trailed her hand by up to 2.8px while rising. It's now positioned after physics moves her (0px gap).
+  - The world was made 300px taller so the rainbow island stays 1,750px above ACHIEVEMENTS.
+- **Tests:**
+  - A shared "travel" helper now uses real key presses for walking, jumping the gaps and riding the balloon.
+  - New balloon-ride test (16 checks).
+  - All seven suites passed: 153 checks.
+
+</details>
+
+### 🤖 Claude
+
+Both requests are done: the much bigger map, and the balloon you steer with the arrow keys. All seven test suites pass (153 checks with real key presses, on a GitHub Pages–style server), and the build passes.
+
+## 1. Much bigger distances (Step 3.1)
+
+| | Before | Now |
+|---|---|---|
+| Distance between neighbouring nodes | 320px | **900px** (2.8×) |
+| Height up to PROJECTS | 200px | **360px** |
+| Height up to ACHIEVEMENTS | 200px | **700px** (balloon section) |
+| World size | 3,600 × 2,900 | **6,000 × 3,600** |
+| Time to travel START → ACHIEVEMENTS | a few seconds | **about 20 seconds** |
+
+- **Real distance:** the nodes themselves moved apart, not just the bridges. One crossing is wider than the screen, and the camera scrolls with her through the whole world. Nothing is scaled down.
+- **Each crossing:** `[node] ══bridge══ (rock) ~~ jump ~~ (rock) ══bridge══ [node]`. She walks two bridges and jumps one 200px gap between small rocks made from your `island_3` art.
+- **Heights:** START, EDUCATION and SKILLS share one level; PROJECTS and ACHIEVEMENTS are higher.
+- **Falling into a gap** respawns her on the last rock or node she stood on, not back at the previous node.
+- **Busier sky:** the background stars and clouds scale up with the world so it doesn't look empty.
+- **Rainbow island:** still 1,750px above ACHIEVEMENTS.
+
+## 2. Balloon interaction (your new request)
+
+After PROJECTS, a bridge leads to a small launch rock with a balloon bouquet tied to a post and a sign saying "🎈 Grab the balloon".
+
+| Step | What happens |
+|---|---|
+| Walk up to the post | She grabs the strings automatically, switches to her balloon-holding pose, and the bouquet moves into her hand |
+| Hold **↑** (or W) | She rises gradually, speeding up smoothly to 170px/s |
+| Release **↑** | She slows gently to a hover over about a second, with no sudden stop |
+| **← →** / A D | She drifts sideways, and the bouquet tilts as she drifts |
+| **↓** / S | She descends |
+| Touch down on ACHIEVEMENTS | She lets go, the balloon floats off into the sky, and a fresh one reappears on the post |
+| Touch down on the launch rock instead | The balloon drifts back to its post; she can step away and grab it again |
+
+- **No teleporting:** she moves with real physics (at most 4px per frame), and the camera follows her the whole way.
+- **Attached to her hand:** the knot stayed exactly in her fist the entire ride (0px gap, measured).
+- **Ceiling:** she can't float off into the sky; she stops just above ACHIEVEMENTS.
+- **Controls bar:** while she's holding the balloon, the bottom bar shows the balloon controls.
+
+**Stars:** 54 in total. There are trails on the bridges, an arc over each jump gap that follows her real jump path so the jump itself collects them, a trail through the sky along the balloon route, and bonus stars high above each bridge that need a jump.
+
+## Problems I found and fixed while testing
+- **Star arcs:** they first followed a generic curve, so a jump could pass under them. They now trace her actual jump arc.
+- **Balloon lag:** the balloon trailed her hand by up to 2.8px while rising. It's now positioned after she moves each frame.
+- **Test updates:** several test checks were updated to match the new layout, without changing what they check.
+
+## Things you should know
+- **No way back down:** once she's on ACHIEVEMENTS, she can't get back down without the balloon (falling respawns her on ACHIEVEMENTS). The final rainbow balloon journey starts from there, so normal play isn't affected.
+- **Files changed:** `src/entities/BalloonRide.js` (new), `src/scenes/GameScene.js`, `src/utils/constants.js`, `src/entities/Stars.js`, `src/entities/Player.js`, `src/scenes/UIScene.js`, and `src/effects/ParallaxBackground.js`.
+- Nothing is committed yet.
+
+---
+
+## Turn 16 — Append today's chat (this entry)
+
+### 👤 You
+
+> Add today's chat (November 13, 2026) to the existing chat history. Preserve all previous conversations. Do not delete, overwrite, or replace anything. Simply append today's conversation as a new dated entry and verify that the old history remains intact. Because the file already contians previous chat of us
+
+### 🤖 Claude
+
+I've appended this dated "Session 2 — 13 November 2026" entry to the **end** of
+`CHAT_HISTORY_CLAUDE.md`. The earlier session was not edited, moved or
+re-saved. I checked that the first 42,103 bytes of the file, which hold the
+old history, are byte-for-byte identical to before (same SHA-256 fingerprint).
+The separate `CHAT_HISTORY.md` from your earlier assistant was not touched.
+
+---
+
+## Appendix — Project state at the end of Session 2
+
+**Adventure route (left → right):**
+```
+                                                                         [ACHIEVEMENTS]
+                                                                       🎈 ↑ balloon ride (700px)
+                                                 [PROJECTS] ══ (launch rock + balloon)
+                                              ╱
+[START] ══ (rock) ~ (rock) ══ [EDUCATION] ══ (rock) ~ (rock) ══ [SKILLS] ══ (rock) ~ (rock) ╱
+```
+(`══` bridge · `~` 200px jump gap · nodes 900px apart · world 6,000 × 3,600 px)
+
+**New or changed files in this session:** `src/entities/Bridge.js`, `src/entities/Stars.js`,
+`src/entities/BalloonRide.js` (new); `src/entities/Player.js`, `src/scenes/GameScene.js`,
+`src/scenes/MenuScene.js`, `src/scenes/BootScene.js`, `src/scenes/UIScene.js`, `src/ui/HUD.js`,
+`src/effects/BalloonJourney.js`, `src/effects/ParallaxBackground.js`, `src/utils/constants.js`;
+`src/ui/SpeechBubble.js` (deleted).
+
+**Test results at the end of Session 2 (all passing):**
+
+| Suite | Checks |
+|---|---|
+| Movement & platform collisions | 27 / 27 |
+| Balloon journey (final, to the rainbow) | 18 / 18 |
+| Resume panels | 27 / 27 |
+| Ending, contact buttons & restart | 24 / 24 |
+| Bridges | 30 / 30 |
+| Collectible stars | 11 / 11 |
+| Balloon ride (keyboard-controlled) | 16 / 16 |
