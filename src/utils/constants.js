@@ -12,7 +12,9 @@ export const WORLD_HEIGHT = 2900;
 
 // ── Player physics ──
 export const GRAVITY = 1100;
-export const PLAYER_SCALE = 0.5;
+// Character size: ~118px tall when standing — sized against the islands,
+// flowers, trophy and castle so she reads as the hero without crowding them.
+export const PLAYER_SCALE = 0.6;
 
 export const PLAYER = {
   speed: 280,            // max run speed (px/s)
@@ -76,8 +78,8 @@ export const BALLOON = {
   arriveMs: 1700,        // bouquet floats down to her
   grabMs: 450,           // she grabs the strings
   flightMs: 9000,        // the flight itself
-  bouquetScale: 0.9,     // big bouquet (assets/objects/balloons.png)
-  floatScale: 0.55,      // float pose (assets/characters/float.png)
+  bouquetScale: PLAYER_SCALE * 1.8,  // big bouquet (assets/objects/balloons.png), sized to her
+  floatScale: PLAYER_SCALE * 1.1,    // float.png draws her ~10% smaller, so it's scaled up to match
   // Pixel positions inside the images where the strings meet
   bouquetKnot: { x: 99, y: 192 },  // balloons.png: knot where strings gather
   floatHand: { x: 130, y: 170 },   // float.png: her fist holding the strings

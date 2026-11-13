@@ -7,6 +7,27 @@ const BODY_W = 56;
 const BODY_H = 150;
 const FEET_PAD = 3;
 
+// Her boots are drawn this many screen pixels below the platform's top edge,
+// so she stands ON the grass instead of on its very back edge. Visual only:
+// the physics body still rests exactly on the platform.
+const FOOT_SINK = 5;
+
+// Horizontal anchor of each pose = the centre of her torso inside that image
+// (measured from the art). The images are padded differently — e.g. the cape
+// trails left in the jump pose — so anchoring every pose at its image centre
+// made her slide sideways by up to ~14px whenever the pose changed.
+export const POSE_ANCHOR_X = {
+  idle: 0.645,
+  run_1: 0.601,
+  run_2: 0.599,
+  run_3: 0.546,
+  jump: 0.665,
+  fall: 0.617,
+  land: 0.524,
+  celebrate: 0.63,
+  float: 0.504,
+};
+
 /**
  * The fantasy explorer.
  * All pose images face RIGHT; moving left mirrors her with flipX.
@@ -45,7 +66,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.createAnimations(scene);
     this.setPose('idle');
 
-    // Run frames differ by a few pixels — keep the body aligned on each frame
+    // Run frames differ by a few pixels — keep anchor + body aligned on each frame
     this.on(Phaser.Animations.Events.ANIMATION_UPDATE, () => this.alignBody());
   }
 
@@ -60,11 +81,20 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     }
   }
 
-  // Body centred horizontally, bottom exactly at her boots
+  // Anchor the current pose at her torso, then centre the body on it with
+  // its bottom at her boots (minus the small visual foot sink)
   alignBody() {
     const f = this.frame;
+    // Phaser mirrors a flipped image around its centre, so when she faces
+    // left the anchor is mirrored too — her torso stays on the same spot
+    const base = POSE_ANCHOR_X[f.texture.key] ?? 0.5;
+    const ax = this.flipX ? 1 - base : base;
+    if (this.originX !== ax) this.setOrigin(ax, 1);
     this.body.setSize(BODY_W, BODY_H, false);
-    this.body.setOffset((f.realWidth - BODY_W) / 2, f.realHeight - BODY_H - FEET_PAD);
+    this.body.setOffset(
+      f.realWidth * ax - BODY_W / 2,
+      f.realHeight - BODY_H - FEET_PAD - FOOT_SINK / this.scaleY
+    );
   }
 
   get onGround() {
@@ -100,7 +130,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       newVx = Math.abs(vx) <= decel ? 0 : vx - Math.sign(vx) * decel;
     }
     this.setVelocityX(newVx);
-    this.setFlipX(this.facing < 0);
+    if (this.flipX !== this.facing < 0) {
+      this.setFlipX(this.facing < 0);
+      this.alignBody();
+    }
 
     // ── Jump: buffered press + coyote time + variable height ──
     const jumpJustPressed = input.jump && !this.jumpHeld;
@@ -122,6 +155,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       this.isJumping = false;
     }
     if (this.body.velocity.y >= 0) this.isJumping = false;
+
+    // Run cycle speed follows her actual speed, so her feet don't slide
+    // while she's speeding up or slowing down
+    if (this.pose === 'run') {
+      this.anims.timeScale = Phaser.Math.Clamp(Math.abs(newVx) / PLAYER.speed, 0.5, 1);
+    }
 
     // ── Pose ── (a jump started this frame counts as airborne immediately)
     if (!onGround || this.body.velocity.y < 0) {

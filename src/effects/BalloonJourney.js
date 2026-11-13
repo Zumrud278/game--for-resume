@@ -94,7 +94,7 @@ export class BalloonJourney {
       .setAlpha(0);
 
     // Knot ends up just above her raised hands
-    const target = { x: p.x + 4, y: p.y - 112 };
+    const target = { x: p.x + 4, y: p.y - 224 * PLAYER_SCALE };
     this.bouquet.setPosition(target.x + 40, target.y - 520);
 
     scene.tweens.add({ targets: this.bouquet, alpha: 1, duration: 500 });
@@ -120,6 +120,7 @@ export class BalloonJourney {
     p.setTexture('float');
     p.pose = 'float';
     p.setScale(BALLOON.floatScale);
+    p.alignBody();                     // anchor the float pose at her torso
 
     // Pull the knot into her fist
     const hand = this.handPoint();
@@ -144,7 +145,8 @@ export class BalloonJourney {
     const f = p.frame;
     const s = p.scaleX;
     return {
-      x: p.x + (BALLOON.floatHand.x - f.realWidth / 2) * s,
+      // displayOriginX is mirrored when flipped; convert back to image coords
+      x: p.x + (BALLOON.floatHand.x - (p.flipX ? f.realWidth - p.displayOriginX : p.displayOriginX)) * (p.flipX ? -s : s),
       y: p.y - (f.realHeight - BALLOON.floatHand.y) * s,
     };
   }

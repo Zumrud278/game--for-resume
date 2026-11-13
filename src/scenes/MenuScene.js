@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { PLAYER_SCALE, COLORS } from '../utils/constants.js';
+import { COLORS } from '../utils/constants.js';
 
 export class MenuScene extends Phaser.Scene {
   constructor() {
@@ -71,7 +71,7 @@ export class MenuScene extends Phaser.Scene {
     }
 
     // ── Character idle ── (centred in the open sky above the horizon)
-    const charScale = PLAYER_SCALE * 1.5;
+    const charScale = 0.75;   // start-screen size (independent of the in-game size)
     const charY = height * 0.5;
     const character = this.add.image(width / 2, charY, 'idle')
       .setScale(charScale);
