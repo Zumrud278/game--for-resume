@@ -6,6 +6,29 @@ export class MenuScene extends Phaser.Scene {
     super({ key: 'Menu' });
   }
 
+  // sky.png scaled uniformly to `width`, with its top 40% faded to transparent
+  static horizonTexture(scene, width) {
+    const key = 'menu_horizon';
+    if (scene.textures.exists(key)) return key;
+    const src = scene.textures.get('sky').getSourceImage();
+    // sky.png has a semi-transparent 1–4px fringe on its edges: use the clean interior
+    const sx = 2, sy = 2, sw = src.width - 4, sh = src.height - 7;
+    const h = Math.round(sh * (width / sw));
+    const tex = scene.textures.createCanvas(key, width, h);
+    const ctx = tex.getContext();
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(src, sx, sy, sw, sh, 0, 0, width, h);
+    ctx.globalCompositeOperation = 'destination-in';
+    const g = ctx.createLinearGradient(0, 0, 0, h);
+    g.addColorStop(0, 'rgba(0,0,0,0)');
+    g.addColorStop(0.4, 'rgba(0,0,0,1)');
+    g.addColorStop(1, 'rgba(0,0,0,1)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, width, h);
+    tex.refresh();
+    return key;
+  }
+
   create() {
     const { width, height } = this.cameras.main;
 
@@ -14,9 +37,11 @@ export class MenuScene extends Phaser.Scene {
     bg.fillGradientStyle(COLORS.darkPurple, COLORS.darkPurple, COLORS.purple, COLORS.pink, 1);
     bg.fillRect(0, 0, width, height);
 
-    // ── Sky tiled at bottom ──
-    const sky = this.add.tileSprite(0, height - 90, width, 180, 'sky')
-      .setOrigin(0, 0.5)
+    // ── Sky picture along the bottom ──
+    // Shown once at full width with a uniform scale (no repeat → no seam, no
+    // stretching), fading softly into the sky at its top (no hard edge)
+    this.add.image(0, height, MenuScene.horizonTexture(this, width))
+      .setOrigin(0, 1)
       .setAlpha(0.35);
 
     // ── Twinkling stars ──

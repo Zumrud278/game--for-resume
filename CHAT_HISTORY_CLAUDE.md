@@ -1532,3 +1532,56 @@ All three improvements are done, and nothing else was changed. All 7 gameplay su
 - **Unchanged:** her size, physics, feet position, balloon hand point and the start-screen look.
 
 **Files changed:** `src/utils/textureQuality.js` (new), `src/scenes/BootScene.js`, `src/entities/Island.js`, `src/entities/Player.js`, `src/entities/BalloonRide.js`, `src/scenes/MenuScene.js`, `src/ui/EndingPanel.js`, and one comment in `src/data/resume.js`. Nothing is committed.
+
+
+---
+
+## Turn 21 — Background fits the screen: no seams, cropping or empty spaces
+
+*13 November 2026 (continued)*
+
+### 👤 You
+
+> Fix the background so it properly fits the game's screen dimensions and scrolling world. Ensure it scales and aligns correctly without stretching, awkward cropping, empty spaces, or visible seams. Make it look natural and consistent throughout the entire journey. Preserve all existing game elements and functionality. Change only the background.
+
+<details>
+<summary><b>Work done</b></summary>
+
+- **Inspected** with screenshots of the start screen, 5 points along the journey, and windows of 1280×720, 1440×900, 2560×1080 and 1024×768, plus row-by-row colour analysis of the sky. Found 4 problems:
+  1. Start screen: `sky.png` was repeated as a 180px strip, with a hard top edge, a visible seam at x≈693 (mountains and castle cut) and a semi-transparent 1–4px fringe built into the picture.
+  2. In-game sky: two linear gradients joined at 55% height, leaving a visible kink line.
+  3. Horizon glow: a stripe with an abrupt lower edge.
+  4. Non-16:9 windows: plain gradient bars beside the 16:9 game view (the "empty spaces").
+- **Fixes (background only):**
+  - `ParallaxBackground.js`: one smooth quadratic sky gradient through the same 3 colours, with a faint dither, in a texture.
+  - `Scenery.js`: the horizon glow became a single soft Gaussian image with no tiling and no edges.
+  - New `AmbientBackdrop.js` (+2 lines in `main.js`): a blurred, dimmed live copy of the frame covers the window behind the game (16:9 cover, never stretched), plus a soft glow around the game frame.
+  - `MenuScene.js`: `sky.png` drawn once at full width with a uniform scale, its edge fringe trimmed, and a soft fade at the top.
+- **Bug found while testing:** the backdrop first sat *behind* the page background (negative z-index), so it was invisible; fixed with explicit layering. It was then inserted first on the page, which made `page.$('canvas')` find it instead of the game; fixed by appending it last.
+- **Checked:** all 7 suites (154 checks) passed; 88–89 fps at 2560×1080 and 1280×720; no errors.
+
+</details>
+
+### 🤖 Claude
+
+I fixed the background so it fits every screen shape, with no seams, hard edges or empty bars. All 7 gameplay suites pass (154 checks), and only background code changed.
+
+**What was wrong, and the fix**
+| Problem | Fix |
+|---|---|
+| **Start screen:** `sky.png` repeated as a strip, leaving a visible seam at x≈693 (mountains and castle chopped), a hard top edge, and faint lines from a see-through fringe built into the picture | Shown **once** at full width with a uniform scale (no stretching, no repeat), the fringe trimmed off, and its top fading softly into the sky |
+| **In-game sky:** two separate gradients met at 55% height, leaving a straight line across the screen | One smooth gradient through the same three colours, with a faint dither so it never bands |
+| **Horizon glow:** a pink stripe with a hard lower edge | A soft bell-shaped glow with no edges, drawn as one image (no tiling) |
+| **Empty spaces:** on windows that aren't 16:9 (e.g. 2560×1080, 1440×900, 1024×768), plain mismatched bars filled the sides or top and bottom | An **ambient backdrop**: a heavily blurred, dimmed live copy of the current frame fills the rest of the window (never stretched), and a soft glow around the game frame lets it blend in, like a video player's ambient mode |
+
+**How it looks now**
+- The space around the game always continues whatever is on screen: the forest at the start, the sky during the balloon ride, the rainbow at the end.
+- The game itself keeps its exact 16:9 view, so nothing in it is cropped or distorted.
+- The sky, glow and forest layers stay smooth and continuous through the whole journey.
+
+**Checked**
+- **Screenshots:** the start screen and 5 points along the journey at 1280×720, 1440×900, 2560×1080 and 1024×768.
+- **Frame rate:** 88–89 fps, including on the large window.
+- **Bug fixed during testing:** the backdrop first ended up *behind* the page background, so it was invisible. I fixed the layering so it shows behind the game.
+
+**Files:** `src/effects/AmbientBackdrop.js` (new), `src/main.js` (2 lines to start it), `src/effects/ParallaxBackground.js` (sky gradient), `src/effects/Scenery.js` (horizon glow), and `src/scenes/MenuScene.js` (start-screen sky picture). Nothing is committed.

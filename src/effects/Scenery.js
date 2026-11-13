@@ -7,7 +7,7 @@ import { GAME_WIDTH, GAME_HEIGHT, WORLD_HEIGHT } from '../utils/constants.js';
  * physics, no gameplay, no map coordinates are touched.
  *
  *   depth  layer
- *   -23.5  horizon glow band                 (pinned, moves with far hills)
+ *   -23.5  horizon glow (soft, edgeless)     (pinned, moves with far hills)
  *   -23    far hills + tall mushroom shapes  (parallax x 0.10, y 0.06)
  *   -21    mid forest, glowing mushrooms     (parallax x 0.20, y 0.12)
  *   -16    near forest, brighter mushrooms   (parallax x 0.35, y 0.20)
@@ -58,13 +58,15 @@ export class Scenery {
     });
 
     // ── Horizon glow behind the far hills ──
+    // One soft bell-shaped glow across the whole screen (no tiling, no hard
+    // edges) — fades smoothly to nothing above and below
     this.horizon = scene.add
-      .tileSprite(0, 0, GAME_WIDTH, 220, 'scn_band')
-      .setOrigin(0, 0)
+      .image(0, 0, 'scn_band')
+      .setOrigin(0, 0.5)
+      .setDisplaySize(GAME_WIDTH, 380)
       .setScrollFactor(0)
       .setDepth(-23.5)
-      .setBlendMode(Phaser.BlendModes.ADD)
-      .setAlpha(0.55);
+      .setBlendMode(Phaser.BlendModes.ADD);
 
     // ── Soft light shafts from above ──
     [[180, 0.07], [620, 0.05], [1060, 0.065]].forEach(([x, a], i) => {
@@ -143,8 +145,7 @@ export class Scenery {
       l.sprite.y = l.y0 + climbed * l.fy;               // the forest sinks as she rises above it
     });
     const far = this.layers[0].sprite;
-    this.horizon.y = far.y - 120;
-    this.horizon.tilePositionX = scrollX * 0.05;
+    this.horizon.y = far.y + 110;          // centred just above the far ridgeline
 
     // Foreground plants only while she's down at forest level
     this.fore.tilePositionX = scrollX * 1.25;
@@ -308,14 +309,15 @@ function makeTextures(scene) {
     }
   });
 
-  // Horizon glow band (vertical soft gradient, tiles horizontally)
-  canvasTex(scene, 'scn_band', 256, 220, (ctx, W, H) => {
-    const g = ctx.createLinearGradient(0, 0, 0, H);
-    g.addColorStop(0, 'rgba(255,170,220,0)');
-    g.addColorStop(0.6, 'rgba(255,170,220,0.55)');
-    g.addColorStop(1, 'rgba(255,190,230,0)');
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, W, H);
+  // Horizon glow: a Gaussian (bell-shaped) vertical profile, so it has no
+  // edges at all; 4px wide, stretched across the screen (uniform per row)
+  canvasTex(scene, 'scn_band', 4, 380, (ctx, W, H) => {
+    for (let y = 0; y < H; y++) {
+      const t = (y / (H - 1) - 0.5) / 0.2;
+      const a = 0.42 * Math.exp(-t * t);
+      ctx.fillStyle = `rgba(255,175,222,${a.toFixed(4)})`;
+      ctx.fillRect(0, y, W, 1);
+    }
   });
 
   // Light shaft (soft edges, fades downward)

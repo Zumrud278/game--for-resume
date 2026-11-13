@@ -18,12 +18,11 @@ export class ParallaxBackground {
     const rnd = new Phaser.Math.RandomDataGenerator(['resume-sky']);
 
     // ── Sky gradient: pinned to the screen, always fills the view ──
-    const sky = scene.add.graphics().setScrollFactor(0).setDepth(-30);
-    const half = GAME_HEIGHT * 0.55;
-    sky.fillGradientStyle(COLORS.skyTop, COLORS.skyTop, COLORS.skyMid, COLORS.skyMid, 1);
-    sky.fillRect(0, 0, GAME_WIDTH, half);
-    sky.fillGradientStyle(COLORS.skyMid, COLORS.skyMid, COLORS.skyBottom, COLORS.skyBottom, 1);
-    sky.fillRect(0, half, GAME_WIDTH, GAME_HEIGHT - half);
+    // One smooth curve through the same three colours (no seam where two
+    // linear gradients used to meet), drawn once into a texture
+    ParallaxBackground.skyTexture(scene);
+    scene.add.image(0, 0, 'sky_gradient').setOrigin(0, 0).setDisplaySize(GAME_WIDTH, GAME_HEIGHT)
+      .setScrollFactor(0).setDepth(-30);
 
     // ── High-altitude glow: a warm rose-gold sky that fades in as the
     //    camera climbs toward the rainbow island ──
@@ -99,6 +98,34 @@ export class ParallaxBackground {
         ease: 'Sine.easeInOut',
       });
     }
+  }
+
+  /**
+   * Vertical sky gradient texture (4 × GAME_HEIGHT): a quadratic curve that
+   * passes through skyTop → skyMid (at 55%) → skyBottom with no kink, plus a
+   * faint ordered dither so the 8-bit colours never show visible bands.
+   */
+  static skyTexture(scene) {
+    if (scene.textures.exists('sky_gradient')) return;
+    const H = GAME_HEIGHT, W = 4;
+    const tex = scene.textures.createCanvas('sky_gradient', W, H);
+    const ctx = tex.getContext();
+    const rgb = (c) => [(c >> 16) & 255, (c >> 8) & 255, c & 255];
+    const top = rgb(COLORS.skyTop), mid = rgb(COLORS.skyMid), bot = rgb(COLORS.skyBottom);
+    const tm = 0.55;
+    // control point so the curve passes exactly through `mid` at t = tm
+    const ctrl = top.map((_, i) => (mid[i] - (1 - tm) ** 2 * top[i] - tm ** 2 * bot[i]) / (2 * (1 - tm) * tm));
+    const bayer = [0, 0.5, 0.125, 0.625];
+    for (let y = 0; y < H; y++) {
+      const t = y / (H - 1);
+      for (let x = 0; x < W; x++) {
+        const d = bayer[(x + 2 * (y % 2)) % 4] - 0.3;
+        const c = top.map((_, i) => Math.round((1 - t) ** 2 * top[i] + 2 * (1 - t) * t * ctrl[i] + t ** 2 * bot[i] + d));
+        ctx.fillStyle = `rgb(${c[0]},${c[1]},${c[2]})`;
+        ctx.fillRect(x, y, 1, 1);
+      }
+    }
+    tex.refresh();
   }
 
   // Layers scroll by themselves (scrollFactor); only the altitude glow
