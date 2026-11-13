@@ -11,6 +11,7 @@ import { Player } from '../entities/Player.js';
 import { Island } from '../entities/Island.js';
 import { Bridge } from '../entities/Bridge.js';
 import { Stars } from '../entities/Stars.js';
+import { BalloonRide } from '../entities/BalloonRide.js';
 import { ParallaxBackground } from '../effects/ParallaxBackground.js';
 import { RainbowDestination } from '../effects/RainbowDestination.js';
 import { SkyCorridor } from '../effects/SkyCorridor.js';
@@ -53,8 +54,20 @@ export class GameScene extends Phaser.Scene {
       this.physics.world?.off(Phaser.Physics.Arcade.Events.WORLD_STEP, this.standOnBridges, this);
     });
 
-    // ── Collectible stars along the route ──
-    this.stars = new Stars(this, this.islands, this.bridges, this.jumpGaps);
+    // ── Balloon after PROJECTS (keyboard-controlled ride up to ACHIEVEMENTS) ──
+    // (created after the player below; position is known now)
+
+    // ── Collectible stars along the route (incl. a trail up the balloon ride) ──
+    const L = this.launch;
+    const skyTrail = [];
+    for (let k = 1; k <= 6; k++) {
+      const t = k / 7;
+      skyTrail.push({
+        x: Phaser.Math.Linear(L.x + 40, L.target.collider.body.left - 30, t),
+        y: Phaser.Math.Linear(L.y - 140, L.target.surfaceY - 90, t) - Math.sin(Math.PI * t) * 60,
+      });
+    }
+    this.stars = new Stars(this, this.islands, this.bridges, this.jumpGaps, skyTrail);
 
     this.platforms = this.physics.add.staticGroup();
     [...this.islands, ...this.rocks, this.destination.island].forEach((island) => {
@@ -67,6 +80,8 @@ export class GameScene extends Phaser.Scene {
     this.currentIsland = 0;
     // Last platform she stood on (node or rock) — where a fall respawns her
     this.checkpoint = { x: start.x, y: start.surfaceY };
+
+    this.ride = new BalloonRide(this, this.player, this.launch, this.launch.target);
 
     this.physics.add.collider(this.player, this.platforms, (player, zone) => {
       if (!player.body.touching.down || !zone.island) return;
@@ -87,7 +102,7 @@ export class GameScene extends Phaser.Scene {
 
     // ── Keyboard: arrows + WASD + Space ──
     this.cursors = this.input.keyboard.createCursorKeys();
-    this.wasd = this.input.keyboard.addKeys('W,A,D');
+    this.wasd = this.input.keyboard.addKeys('W,A,S,D');
 
     // ── Balloon journey (starts after ACHIEVEMENTS is completed) ──
     this.journey = new BalloonJourney(this, this.player, this.destination);
@@ -119,9 +134,18 @@ export class GameScene extends Phaser.Scene {
       left: !!(c.left.isDown || this.wasd.A.isDown || mobile?.left),
       right: !!(c.right.isDown || this.wasd.D.isDown || mobile?.right),
       jump: !!(c.up.isDown || c.space.isDown || this.wasd.W.isDown || mobile?.up),
+      up: !!(c.up.isDown || this.wasd.W.isDown || mobile?.up),
+      down: !!(c.down.isDown || this.wasd.S.isDown),
     };
-    if (this.isPanelOpen()) {
-      this.player.update({ left: false, right: false, jump: false });
+    const paused = this.isPanelOpen();
+    const none = { left: false, right: false, jump: false, up: false, down: false };
+
+    // Holding the balloon: the ride steers her instead of walking/jumping
+    const riding = this.ride.update(paused ? none : input, delta / 1000);
+    if (riding) {
+      this.player.jumpHeld = input.jump;   // no surprise jump when she lets go
+    } else if (paused) {
+      this.player.update(none);
       // A jump key still held when the panel closes must be released and
       // pressed again — otherwise she'd hop by herself on close
       this.player.jumpHeld = input.jump;
@@ -160,6 +184,17 @@ export class GameScene extends Phaser.Scene {
       const b = this.islands[i + 1];
       const left = a.collider.body.right;
       const right = b.collider.body.left;
+
+      // Last crossing (PROJECTS → ACHIEVEMENTS): bridge to a launch rock with
+      // a balloon; ACHIEVEMENTS is far above, reached by riding the balloon
+      if (i === this.islands.length - 2) {
+        const rock = new Island(this, { ...rockCfg, x: left + ROUTE.launchBridge + rockW / 2, surfaceY: a.surfaceY }, -1);
+        this.rocks.push(rock);
+        this.bridges.push(new Bridge(this, { x: left, y: a.surfaceY }, { x: rock.collider.body.left, y: a.surfaceY }));
+        this.launch = { x: rock.x + 18, y: a.surfaceY, rock, target: b };
+        return;
+      }
+
       const span = (right - left - 2 * rockW - ROUTE.jumpGap) / 2;   // each bridge's length
       const rockY = (a.surfaceY + b.surfaceY) / 2;
 
@@ -180,7 +215,7 @@ export class GameScene extends Phaser.Scene {
   // One-way like the islands — while rising she passes up through it.
   standOnBridges() {
     const body = this.player?.body;
-    if (!body?.enable) return;
+    if (!body?.enable || this.ride?.holding) return;
     const x = body.position.x + body.halfWidth;
     const bridge = this.bridges.find((b) => b.covers(x));
     if (!bridge || body.velocity.y < 0) {
@@ -248,6 +283,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   respawn() {
+    this.ride.cancel();
     // Back on the last platform she stood on (a node or a stepping rock)
     this.player.resetTo(this.checkpoint.x, this.checkpoint.y - 60);
     this.cameras.main.flash(250, 255, 255, 255, false);

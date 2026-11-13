@@ -29,9 +29,8 @@ export const RESUME = {
       islandLabel: 'EDUCATION',
       icon: 'education',
       items: [
-        { title: 'ADA University' },
-        { title: 'Information Technologies' },
-        { placeholder: 'Add more education details here (e.g. degree, years of study)' },
+        { title: 'I am studying IT at ADA University, where I am in my second year, including the EAPP - foundation year.' },
+        
       ],
     },
     {
@@ -82,7 +81,7 @@ export const RESUME = {
     email: 'zismayilova167@gmail.com',
     github: 'https://github.com/Zumrud278',
     linkedin: 'https://www.linkedin.com/in/zumrud-ismayilova-427bb9382',
-    resumePdf: null,  // not provided yet — e.g. 'assets/resume.pdf'
+    
   },
 
   // Shown when she lands on the rainbow island

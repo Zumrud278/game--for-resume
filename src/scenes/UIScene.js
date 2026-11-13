@@ -40,6 +40,12 @@ export class UIScene extends Phaser.Scene {
     const onStar = (count, total) => this.hud.setStars(count, total);
     gameScene.events.on('star-collected', onStar);
 
+    // Balloon ride: show its controls while she's holding the balloon
+    const onGrab = () => this.hud.setInstructions('🎈  ↑ Rise      ← → Drift      ↓ Descend      (land to let go)');
+    const onLetGo = () => this.hud.setInstructions();
+    gameScene.events.on('balloon-grab', onGrab);
+    gameScene.events.on('balloon-release', onLetGo);
+
     // Balloon journey: controls are paused, so say what's happening
     const onJourneyStart = () => this.hud.setInstructions('✦  The balloons are carrying you to the Rainbow…  ✦');
     const onJourneyEnd = () => {
@@ -55,6 +61,8 @@ export class UIScene extends Phaser.Scene {
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       gameScene.events.off('island-changed', onIsland);
       gameScene.events.off('star-collected', onStar);
+      gameScene.events.off('balloon-grab', onGrab);
+      gameScene.events.off('balloon-release', onLetGo);
       gameScene.events.off('journey-start', onJourneyStart);
       gameScene.events.off('journey-complete', onJourneyEnd);
       this.panel.destroy();

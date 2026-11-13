@@ -8,7 +8,7 @@ export const GAME_HEIGHT = 720;
 export const WORLD_WIDTH = 6000;
 // Tall world: the climb happens at the bottom, the balloon journey
 // carries her ~1670px straight up to the rainbow island at the top.
-export const WORLD_HEIGHT = 3300;
+export const WORLD_HEIGHT = 3600;
 
 // ── Player physics ──
 export const GRAVITY = 1100;
@@ -49,13 +49,16 @@ const fromResume = (id) => ({
 
 // Layout (surfaceY = grass height; smaller = higher):
 //   Ground row — START, EDUCATION, SKILLS on the same level
-//   Upper tier — PROJECTS one STEP up, ACHIEVEMENTS one more STEP up
+//   Upper tier — PROJECTS one STEP up, ACHIEVEMENTS high above (balloon ride)
 // GAP = distance between the walkable edges of neighbouring nodes. Each
 // crossing is a little journey of its own (built in GameScene.buildRoute):
 //   [node] ══bridge══ (rock) ~~jump~~ (rock) ══bridge══ [node]
-const GROUND = 3030;
+const GROUND = 3330;
 const STEP = 360;
 const GAP = 900;
+// PROJECTS → ACHIEVEMENTS is the balloon section: ACHIEVEMENTS floats this
+// far above PROJECTS — too high for bridges or jumps, so she rides a balloon
+const LIFT = 700;
 
 // Node x positions are chained so each gap is exactly GAP wide
 // (half-widths = half of each island's walkable top)
@@ -71,7 +74,7 @@ export const ISLANDS = [
   { ...fromResume('education'),                                   x: X1, surfaceY: GROUND,            key: 'island_2',      scale: 2.1,  grassFrac: 0.2  },
   { ...fromResume('skills'),                                      x: X2, surfaceY: GROUND,            key: 'island_3',      scale: 2.5,  grassFrac: 0.2  },
   { ...fromResume('projects'),                                    x: X3, surfaceY: GROUND - STEP,     key: 'island_4',      scale: 1.95, grassFrac: 0.13 },
-  { ...fromResume('achievements'),                                x: X4, surfaceY: GROUND - STEP * 2, key: 'trophy_island', scale: 1.7,  grassFrac: 0.44 },
+  { ...fromResume('achievements'),                                x: X4, surfaceY: GROUND - STEP - LIFT, key: 'trophy_island', scale: 1.7,  grassFrac: 0.44 },
 ];
 
 // Small stepping-stone rocks in the middle of each crossing, with a jump
@@ -79,6 +82,7 @@ export const ISLANDS = [
 export const ROUTE = {
   rock: { key: 'island_3', scale: 1.0, grassFrac: 0.2 },
   jumpGap: 200,
+  launchBridge: 255,   // PROJECTS → launch rock (where the balloon is tied)
 };
 
 // ── Final rainbow destination ──
@@ -109,6 +113,17 @@ export const BALLOON = {
   // Pixel positions inside the images where the strings meet
   bouquetKnot: { x: 99, y: 192 },  // balloons.png: knot where strings gather
   floatHand: { x: 130, y: 170 },   // float.png: her fist holding the strings
+};
+
+// ── Balloon ride (PROJECTS → ACHIEVEMENTS), controlled with the keyboard ──
+export const BALLOON_RIDE = {
+  rise: 170,           // px/s while ↑ is held
+  descend: 130,        // px/s while ↓ is held
+  drift: 170,          // px/s sideways with ← →
+  accel: 420,          // px/s² — how gently she speeds up / slows down
+  ceilingAbove: 260,   // she can float this far above ACHIEVEMENTS, no higher
+  grabRange: 42,       // how close to the post she must walk to grab it
+  bouquetScale: PLAYER_SCALE * 1.25,
 };
 
 // ── Colors ──

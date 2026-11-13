@@ -16,7 +16,7 @@ const CHEST = 45;            // her chest is ~45px above her feet
  * Each star can be collected once per playthrough.
  */
 export class Stars {
-  constructor(scene, islands, bridges, jumpGaps = []) {
+  constructor(scene, islands, bridges, jumpGaps = [], skyTrail = []) {
     this.scene = scene;
     this.stars = [];
     this.collected = 0;
@@ -41,6 +41,9 @@ export class Stars {
         this.add(x, g.y - rise - CHEST);
       });
     });
+
+    // A trail through the sky along the balloon ride
+    skyTrail.forEach((p) => this.add(p.x, p.y));
 
     // One on each island before ACHIEVEMENTS, beside the sign, at walking height
     islands.slice(0, -1).forEach((isl) => this.add(isl.x + 75, isl.surfaceY - LOW));

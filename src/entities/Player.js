@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { PLAYER, PLAYER_SCALE } from '../utils/constants.js';
+import { PLAYER, PLAYER_SCALE, BALLOON } from '../utils/constants.js';
 
 // Unscaled physics body (the character art is ~140×200).
 // FEET_PAD = transparent rows under the boots in every pose image.
@@ -196,6 +196,18 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       this.setTexture(key);
     }
     this.alignBody();
+  }
+
+  /** World position of her fist in the float pose (where balloon strings attach). */
+  handPoint() {
+    const f = this.frame;
+    const s = this.scaleX;
+    // displayOriginX is mirrored when flipped; convert back to image coords
+    const ax = this.flipX ? f.realWidth - this.displayOriginX : this.displayOriginX;
+    return {
+      x: this.x + (BALLOON.floatHand.x - ax) * (this.flipX ? -s : s),
+      y: this.y - (f.realHeight - BALLOON.floatHand.y) * s,
+    };
   }
 
   // Place her standing at (x, feetY) with no momentum
