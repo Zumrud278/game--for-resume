@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
-import { COLORS } from '../utils/constants.js';
+import { COLORS, PLAYER_SCALE, BALLOON, ISLANDS } from '../utils/constants.js';
+import { prescaleTexture, polishTexture } from '../utils/textureQuality.js';
 
 const CHARACTER_KEYS = ['idle', 'jump', 'fall', 'land', 'celebrate', 'float', 'run_1', 'run_2', 'run_3'];
 
@@ -101,6 +102,17 @@ export class BootScene extends Phaser.Scene {
 
   create() {
     this.missing.forEach((key) => this.makePlaceholder(key));
+
+    // Character: every pose drawn once at its exact in-game size, so she's
+    // rendered 1:1 — her eyes and fine details stay stable while she moves
+    prescaleTexture(this, 'idle', 0.75, 'idle_menu');   // start-screen copy (its own size)
+    CHARACTER_KEYS.forEach((key) => {
+      prescaleTexture(this, key, key === 'float' ? BALLOON.floatScale : PLAYER_SCALE);
+    });
+
+    // Level nodes: polished copies of the original island pictures
+    ISLANDS.forEach((cfg) => polishTexture(this, cfg.key, cfg.scale, `node_${cfg.id}`));
+
     this.scene.start('Menu');
   }
 

@@ -1452,3 +1452,83 @@ The rainbow island is now the next level after ACHIEVEMENTS, and she reaches it 
 - **Gameplay:** all 7 suites still pass, 154 checks, so nothing functional changed.
 
 Nothing is committed yet.
+
+
+---
+
+## Turn 19 — Pixel-art redesign of the nodes (interrupted, then reverted)
+
+*13 November 2026 (continued)*
+
+### 👤 You
+
+> Redesign all the existing game nodes yourself instead of using the current picture-based assets. Create original, high-quality, polished pixel-art nodes that match my mushroom-forest theme. Make them visually appealing, detailed, and consistent with the game's existing style. Each node should have its own recognizable design while maintaining a unified visual identity. Implement them directly in the game using custom graphics rather than low-quality images. Preserve their existing positions, functionality, connections, and interactions. Do not change anything else in the game.
+
+<details>
+<summary><b>Work done</b></summary>
+
+- Drew 5 original pixel-art nodes in code (new `NodeArt.js`): a shared floating-rock and grass base, plus centrepieces of a mushroom cottage (START), a book stack with graduation cap (EDUCATION), a `</>` monitor (SKILLS), a fruit tree with an AND-gate board (PROJECTS) and a golden trophy with laurels (ACHIEVEMENTS).
+- Kept every platform, bridge and star exactly in place. The collider still used the original picture's footprint, verified with node x positions `[240,1401,2539,3678,4818]` and 900px gaps.
+- Starting a Python static web server, to compare against the previous version, was **blocked by the permission system**. I didn't retry it, and verified with an in-game formula check instead.
+- While I was polishing the rock shading and laurels, **you interrupted the session**. That work was not finished or committed, and was reverted in Turn 20.
+
+</details>
+
+### 🤖 Claude
+
+*(No final answer — the turn was interrupted by you while I was re-screenshotting the polished pixel-art nodes. You then gave the new instructions in Turn 20.)*
+
+---
+
+## Turn 20 — Keep the original nodes (polished), remove the resume placeholder, fix her eyes
+
+*13 November 2026 (continued)*
+
+### 👤 You
+
+> Make only these improvements:
+>
+> 1. Keep the previous node designs- i dont liked yours, but polish their quality, details, and appearance. Do not redesign or replace them.
+> 2. Remove the "Add Your Resume" text from the final rainbow section.
+> 3. Improve the character's movement animations. Her eyes look distorted when she moves. Keep her eyes consistent and natural during walking, jumping, and other animations.
+>
+> Preserve everything else exactly as it is. Do not change the map, layout, assets, or existing functionality. do not forget adding all of our messages to chat history if some part of our chta exist then no problem but if there is missing part add it.
+
+<details>
+<summary><b>Work done</b></summary>
+
+- **Nodes:**
+  - discarded the uncommitted pixel-art redesign (`git checkout -- src/entities/Island.js`, deleted `NodeArt.js`), so your original island pictures are back
+  - new `src/utils/textureQuality.js` with `polishTexture`, which makes a high-quality upscale of each node picture to its exact on-screen size, then a light unsharp mask, +10% vibrance, +5% contrast and a thin 2px dark-plum outline
+  - `Island.js`: the 5 nodes use the polished copies drawn 1:1; platforms, bridges and signs still use the original picture's footprint, so nothing moves
+- **Eyes:**
+  - found that the distortion comes from the GPU shrinking each pose image to 60% with plain bilinear filtering (no mipmaps), which breaks thin details like the eyes differently in every animation frame
+  - fix: `prescaleTexture` pre-renders every pose once at its exact in-game size with high-quality downscaling, and she's drawn 1:1
+  - `Player.js`, `BalloonRide.js` and `MenuScene.js` were adapted so her size, physics body, feet, hand point and start-screen size are identical
+  - an old-vs-new face comparison of every pose confirmed rounder, consistent eyes
+  - a sub-pixel and whole-pixel movement test confirmed rendering never changes while she moves
+- **Ending:** `EndingPanel.js` no longer renders a row for a missing link, so the "Resume (PDF) · to add · Not provided yet" placeholder is gone. The comment in `resume.js` was updated.
+- **Checked:** all 7 suites (154 checks) passed, the start-screen character was unchanged (104×152), Start works, and there were no errors.
+- **Chat history:** appended Turns 19–20; the earlier content was verified byte-for-byte.
+
+</details>
+
+### 🤖 Claude
+
+All three improvements are done, and nothing else was changed. All 7 gameplay suites pass (154 checks), the build passes, and the chat history is updated.
+
+**1. Your original nodes are back, polished (not redesigned)**
+- I discarded my pixel-art versions completely, so START, EDUCATION, SKILLS, PROJECTS and ACHIEVEMENTS use your own island pictures again.
+- **The polish:** the game used to stretch them 1.7–2.5× on the GPU, which made them blurry. Now each picture is upscaled once at load time with high-quality smoothing, then given a light sharpen for crisper rock facets and grass, a slight colour lift so they stand out from the forest background, and a thin dark outline for clean edges. Same artwork, cleaner result.
+- **Nothing moved:** platforms, bridges, stars and signs use exactly the same measurements as before.
+
+**2. "Add your resume" removed from the rainbow section**
+- The ending card no longer shows the "Resume (PDF) · to add · Not provided yet" row. It now has Email, GitHub, LinkedIn, Play again and Keep exploring.
+- If you add a PDF later (`resumePdf: 'assets/resume.pdf'` in `src/data/resume.js`), a real download button will appear automatically.
+
+**3. Her eyes are consistent now**
+- **The cause:** her pose images are about 140×200 pixels and were shrunk to 60% on the fly by the GPU with basic filtering. That drops or merges thin details like eye outlines and highlights, and differently in each pose image. So while she walked or jumped, the frames swapped and her eyes kept changing shape.
+- **The fix:** every pose is now drawn once at its exact in-game size with high-quality downscaling, then shown 1:1. Her eyes come out round and consistent in idle, all run frames, jump, fall, landing, celebrating and the balloon pose. Facing left or right doesn't change them, and moving never changes how they're drawn (I measured this in pixels).
+- **Unchanged:** her size, physics, feet position, balloon hand point and the start-screen look.
+
+**Files changed:** `src/utils/textureQuality.js` (new), `src/scenes/BootScene.js`, `src/entities/Island.js`, `src/entities/Player.js`, `src/entities/BalloonRide.js`, `src/scenes/MenuScene.js`, `src/ui/EndingPanel.js`, and one comment in `src/data/resume.js`. Nothing is committed.

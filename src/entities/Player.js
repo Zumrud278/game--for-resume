@@ -16,6 +16,10 @@ const FOOT_SINK = 5;
 // (measured from the art). The images are padded differently — e.g. the cape
 // trails left in the jump pose — so anchoring every pose at its image centre
 // made her slide sideways by up to ~14px whenever the pose changed.
+// Pose images are pre-scaled at boot to their in-game size (see BootScene):
+// the float pose by BALLOON.floatScale, every other pose by PLAYER_SCALE
+export const texScale = (key) => (key === 'float' ? BALLOON.floatScale : PLAYER_SCALE);
+
 export const POSE_ANCHOR_X = {
   idle: 0.645,
   run_1: 0.601,
@@ -44,7 +48,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     // Feet-anchored origin: poses have different heights, so anchoring at
     // the bottom keeps her boots on the grass whenever the pose changes.
     this.setOrigin(0.5, 1);
-    this.setScale(PLAYER_SCALE);
+    this.setScale(1);   // pose textures are pre-scaled to their in-game size (BootScene)
     this.setDepth(10);
     this.setCollideWorldBounds(true);
 
@@ -90,10 +94,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const base = POSE_ANCHOR_X[f.texture.key] ?? 0.5;
     const ax = this.flipX ? 1 - base : base;
     if (this.originX !== ax) this.setOrigin(ax, 1);
-    this.body.setSize(BODY_W, BODY_H, false);
+    const k = texScale(f.texture.key);           // pose images are pre-scaled by k
+    this.body.setSize(BODY_W * k, BODY_H * k, false);
     this.body.setOffset(
-      f.realWidth * ax - BODY_W / 2,
-      f.realHeight - BODY_H - FEET_PAD - FOOT_SINK / this.scaleY
+      f.realWidth * ax - (BODY_W * k) / 2,
+      f.realHeight - (BODY_H + FEET_PAD) * k - FOOT_SINK / this.scaleY
     );
   }
 
@@ -202,11 +207,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   handPoint() {
     const f = this.frame;
     const s = this.scaleX;
+    const k = texScale('float');                  // hand position is measured on the original image
     // displayOriginX is mirrored when flipped; convert back to image coords
     const ax = this.flipX ? f.realWidth - this.displayOriginX : this.displayOriginX;
     return {
-      x: this.x + (BALLOON.floatHand.x - ax) * (this.flipX ? -s : s),
-      y: this.y - (f.realHeight - BALLOON.floatHand.y) * s,
+      x: this.x + (BALLOON.floatHand.x * k - ax) * (this.flipX ? -s : s),
+      y: this.y - (f.realHeight - BALLOON.floatHand.y * k) * s,
     };
   }
 

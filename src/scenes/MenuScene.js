@@ -71,10 +71,9 @@ export class MenuScene extends Phaser.Scene {
     }
 
     // ── Character idle ── (centred in the open sky above the horizon)
-    const charScale = 0.75;   // start-screen size (independent of the in-game size)
+    // start-screen size (0.75 of the original art), pre-scaled at boot and drawn 1:1
     const charY = height * 0.5;
-    const character = this.add.image(width / 2, charY, 'idle')
-      .setScale(charScale);
+    const character = this.add.image(width / 2, charY, 'idle_menu');
 
     this.tweens.add({
       targets: character,

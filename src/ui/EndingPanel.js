@@ -77,13 +77,9 @@ export class EndingPanel {
     window.addEventListener('keydown', this.onKey);
   }
 
-  // One contact row: a real link, or a dashed placeholder when missing
+  // One contact row (a real link). Nothing is shown when the value is missing.
   linkRow(icon, label, href, value, withCopy = false) {
-    if (!href) {
-      return `<li class="end-link-row"><span class="end-link end-placeholder">${ICONS[icon]}
-        <span class="end-link-text"><span class="end-link-label">${label}<span class="end-tag">to add</span></span>
-        <span class="end-link-value">Not provided yet</span></span></span></li>`;
-    }
+    if (!href) return '';
     const external = !href.startsWith('mailto:');
     return `<li class="end-link-row">
       <a class="end-link" data-contact="${icon}" href="${escapeHtml(href)}"${external ? ' target="_blank" rel="noopener noreferrer"' : ''}>

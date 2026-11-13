@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { FONT_FAMILY } from '../utils/constants.js';
+import { POLISH_PAD } from '../utils/textureQuality.js';
 
 /**
  * A floating grass island.
@@ -15,12 +16,27 @@ export class Island {
     this.x = config.x;
     this.surfaceY = config.surfaceY;
 
-    // Island art
-    this.image = scene.add
-      .image(config.x, config.surfaceY, config.key)
-      .setOrigin(0.5, config.grassFrac)
-      .setScale(config.scale)
-      .setDepth(2);
+    // Footprint of the original picture at its game scale — the platform,
+    // bridge attachment points and sign spacing are all based on it
+    const src = scene.textures.get(config.key).getSourceImage();
+    this.footprint = { w: src.width * config.scale, h: src.height * config.scale };
+
+    // Island art. Level nodes use their polished copy (same artwork, upscaled
+    // with high quality, sharpened and outlined at boot — drawn 1:1).
+    const polished = `node_${config.id}`;
+    if (config.id && scene.textures.exists(polished)) {
+      const t = scene.textures.get(polished).getSourceImage();
+      this.image = scene.add
+        .image(config.x, config.surfaceY, polished)
+        .setOrigin(0.5, (config.grassFrac * this.footprint.h + POLISH_PAD) / t.height)
+        .setDepth(2);
+    } else {
+      this.image = scene.add
+        .image(config.x, config.surfaceY, config.key)
+        .setOrigin(0.5, config.grassFrac)
+        .setScale(config.scale)
+        .setDepth(2);
+    }
 
     // One-way platform along the grass:
     //  - narrower than the art so she doesn't stand on air at rounded edges
@@ -29,7 +45,7 @@ export class Island {
     //    never snags on an island's side
     this.collider = null;
     if (solid) {
-      const w = this.image.displayWidth * 0.78;
+      const w = this.footprint.w * 0.78;
       const thickness = 28;
       this.collider = scene.add.zone(config.x, config.surfaceY + thickness / 2, w, thickness);
       scene.physics.add.existing(this.collider, true);
@@ -42,7 +58,7 @@ export class Island {
 
     // Floating sign above the island: [icon] LABEL
     if (config.label) {
-      const labelY = config.surfaceY - this.image.displayHeight * config.grassFrac - 34;
+      const labelY = config.surfaceY - this.footprint.h * config.grassFrac - 34;
       this.label = this.createSign(scene, config, Math.min(labelY, config.surfaceY - 150));
 
       scene.tweens.add({
@@ -96,6 +112,6 @@ export class Island {
   }
 
   get width() {
-    return this.image.displayWidth;
+    return this.footprint.w;
   }
 }

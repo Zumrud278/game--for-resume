@@ -75,8 +75,8 @@ export const RESUME = {
     },
   ],
 
-  // Contact panel on the rainbow island. Set any value to null to show
-  // a "to add" placeholder instead of a button.
+  // Contact panel on the rainbow island. A value set to null is simply not
+  // shown (e.g. set resumePdf to 'assets/resume.pdf' to add a download button).
   contact: {
     email: 'zismayilova167@gmail.com',
     github: 'https://github.com/Zumrud278',

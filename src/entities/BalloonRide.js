@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { BALLOON, BALLOON_RIDE, PLAYER_SCALE } from '../utils/constants.js';
+import { BALLOON, BALLOON_RIDE } from '../utils/constants.js';
 
 /**
  * The balloon after PROJECTS: a bouquet tied to a post on the launch rock.
@@ -133,7 +133,7 @@ export class BalloonRide {
     p.setFlipX(false);
     p.setTexture('float');
     p.pose = 'float';
-    p.setScale(BALLOON.floatScale);
+    p.setScale(1);   // the float pose texture is pre-scaled to its in-game size
     p.alignBody();
 
     // The bouquet comes off the post into her hand
@@ -161,7 +161,7 @@ export class BalloonRide {
 
     p.body.setAllowGravity(true);
     p.body.setVelocity(0, 0);
-    p.setScale(PLAYER_SCALE);
+    p.setScale(1);
     p.pose = null;
     p.setPose('idle');
 
@@ -215,7 +215,7 @@ export class BalloonRide {
     this.holding = false;
     this.attached = false;
     this.player.body.setAllowGravity(true);
-    this.player.setScale(PLAYER_SCALE);
+    this.player.setScale(1);
     this.player.pose = null;
     this.player.setPose('idle');
     this.scene.tweens.killTweensOf(this.bouquet);
