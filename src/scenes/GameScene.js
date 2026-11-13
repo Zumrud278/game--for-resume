@@ -3,9 +3,9 @@ import {
   WORLD_WIDTH,
   WORLD_HEIGHT,
   ISLANDS,
-  DESTINATION,
   CAMERA_LOOKAHEAD,
   BALLOON,
+  ROUTE,
 } from '../utils/constants.js';
 import { Player } from '../entities/Player.js';
 import { Island } from '../entities/Island.js';
@@ -41,17 +41,8 @@ export class GameScene extends Phaser.Scene {
     const startLeft = this.islands[0].collider.body.left + 10;
     this.physics.world.setBounds(startLeft, 0, WORLD_WIDTH - startLeft, WORLD_HEIGHT);
 
-    // ── Wooden bridges between consecutive islands ──
-    // From one island's grass edge to the next one's (level across the
-    // ground row, sloping up to PROJECTS and ACHIEVEMENTS)
-    this.bridges = this.islands.slice(0, -1).map((island, i) => {
-      const next = this.islands[i + 1];
-      return new Bridge(
-        this,
-        { x: island.collider.body.right, y: island.surfaceY },
-        { x: next.collider.body.left, y: next.surfaceY }
-      );
-    });
+    // ── The route between nodes: bridges, stepping-stone rocks, jump gaps ──
+    this.buildRoute();
     this.wasOnBridge = false;
     // Checked after EVERY physics step (a slow frame can run several steps),
     // so she can never move past a deck between two checks
@@ -63,10 +54,10 @@ export class GameScene extends Phaser.Scene {
     });
 
     // ── Collectible stars along the route ──
-    this.stars = new Stars(this, this.islands, this.bridges);
+    this.stars = new Stars(this, this.islands, this.bridges, this.jumpGaps);
 
     this.platforms = this.physics.add.staticGroup();
-    [...this.islands, this.destination.island].forEach((island) => {
+    [...this.islands, ...this.rocks, this.destination.island].forEach((island) => {
       if (island.collider) this.platforms.add(island.collider);
     });
 
@@ -74,11 +65,13 @@ export class GameScene extends Phaser.Scene {
     const start = ISLANDS[0];
     this.player = new Player(this, start.x - 40, start.surfaceY);
     this.currentIsland = 0;
+    // Last platform she stood on (node or rock) — where a fall respawns her
+    this.checkpoint = { x: start.x, y: start.surfaceY };
 
     this.physics.add.collider(this.player, this.platforms, (player, zone) => {
-      if (player.body.touching.down && zone.island && zone.island.index >= 0) {
-        this.setCurrentIsland(zone.island.index);
-      }
+      if (!player.body.touching.down || !zone.island) return;
+      this.checkpoint = { x: zone.island.x, y: zone.island.surfaceY };
+      if (zone.island.index >= 0) this.setCurrentIsland(zone.island.index);
     });
 
     // ── Camera: fixed zoom, smooth follow, clamped to the world ──
@@ -148,6 +141,38 @@ export class GameScene extends Phaser.Scene {
     if (this.player.y > WORLD_HEIGHT + 150) this.respawn();
 
     this.checkJourneyTrigger(delta);
+  }
+
+  /**
+   * Builds each crossing between two nodes:
+   *   [node] ══bridge══ (rock) ~~ jump gap ~~ (rock) ══bridge══ [node]
+   * The rocks sit halfway up any height difference; the bridges take the climb.
+   */
+  buildRoute() {
+    const rockCfg = ROUTE.rock;
+    const rockTex = this.textures.get(rockCfg.key).getSourceImage();
+    const rockW = rockTex.width * rockCfg.scale * 0.78;   // walkable width (matches Island)
+
+    this.rocks = [];
+    this.bridges = [];
+    this.jumpGaps = [];
+    this.islands.slice(0, -1).forEach((a, i) => {
+      const b = this.islands[i + 1];
+      const left = a.collider.body.right;
+      const right = b.collider.body.left;
+      const span = (right - left - 2 * rockW - ROUTE.jumpGap) / 2;   // each bridge's length
+      const rockY = (a.surfaceY + b.surfaceY) / 2;
+
+      const r1 = new Island(this, { ...rockCfg, x: left + span + rockW / 2, surfaceY: rockY }, -1);
+      const r2 = new Island(this, { ...rockCfg, x: right - span - rockW / 2, surfaceY: rockY }, -1);
+      this.rocks.push(r1, r2);
+
+      this.bridges.push(
+        new Bridge(this, { x: left, y: a.surfaceY }, { x: r1.collider.body.left, y: rockY }),
+        new Bridge(this, { x: r2.collider.body.right, y: rockY }, { x: right, y: b.surfaceY })
+      );
+      this.jumpGaps.push({ x1: r1.collider.body.right, x2: r2.collider.body.left, y: rockY });
+    });
   }
 
   // Bridges are line segments (Arcade physics has no slopes): when her feet
@@ -223,10 +248,8 @@ export class GameScene extends Phaser.Scene {
   }
 
   respawn() {
-    const island = this.currentIsland === DESTINATION_INDEX
-      ? DESTINATION
-      : ISLANDS[this.currentIsland] || ISLANDS[0];
-    this.player.resetTo(island.x, island.surfaceY - 60);
+    // Back on the last platform she stood on (a node or a stepping rock)
+    this.player.resetTo(this.checkpoint.x, this.checkpoint.y - 60);
     this.cameras.main.flash(250, 255, 255, 255, false);
   }
 }

@@ -5,10 +5,10 @@ export const GAME_WIDTH = 1280;
 export const GAME_HEIGHT = 720;
 
 // ── World dimensions ──
-export const WORLD_WIDTH = 3600;
+export const WORLD_WIDTH = 6000;
 // Tall world: the climb happens at the bottom, the balloon journey
 // carries her ~1670px straight up to the rainbow island at the top.
-export const WORLD_HEIGHT = 2900;
+export const WORLD_HEIGHT = 3300;
 
 // ── Player physics ──
 export const GRAVITY = 1100;
@@ -50,13 +50,14 @@ const fromResume = (id) => ({
 // Layout (surfaceY = grass height; smaller = higher):
 //   Ground row — START, EDUCATION, SKILLS on the same level
 //   Upper tier — PROJECTS one STEP up, ACHIEVEMENTS one more STEP up
-// GAP = space between the walkable edges of neighbouring islands; wooden
-// bridges span every gap (see entities/Bridge.js).
-const GROUND = 2630;
-const STEP = 200;
-const GAP = 320;
+// GAP = distance between the walkable edges of neighbouring nodes. Each
+// crossing is a little journey of its own (built in GameScene.buildRoute):
+//   [node] ══bridge══ (rock) ~~jump~~ (rock) ══bridge══ [node]
+const GROUND = 3030;
+const STEP = 360;
+const GAP = 900;
 
-// Island x positions are chained so each gap is exactly GAP wide
+// Node x positions are chained so each gap is exactly GAP wide
 // (half-widths = half of each island's walkable top)
 const HALF = { start: 142, education: 119, skills: 119, projects: 120, achievements: 120 };
 const X0 = 240;
@@ -73,6 +74,13 @@ export const ISLANDS = [
   { ...fromResume('achievements'),                                x: X4, surfaceY: GROUND - STEP * 2, key: 'trophy_island', scale: 1.7,  grassFrac: 0.44 },
 ];
 
+// Small stepping-stone rocks in the middle of each crossing, with a jump
+// between them (her jump reaches ~326px across on the level)
+export const ROUTE = {
+  rock: { key: 'island_3', scale: 1.0, grassFrac: 0.2 },
+  jumpGap: 200,
+};
+
 // ── Final rainbow destination ──
 // ~1670px ABOVE the achievements island and offset to the right.
 // Out of jumping reach — the balloon journey carries her up here.
@@ -81,12 +89,12 @@ export const DESTINATION = {
   label: 'RAINBOW',
   icon: 'star',
   hudName: 'Rainbow Island',
-  x: 3150,
+  x: X4 + 650,
   surfaceY: 520,
   key: 'castle_island',
   scale: 1.25,          // small fantasy castle under a large rainbow
   grassFrac: 0.53,
-  landingX: 3130,       // where the balloons set her down (the landing platform)
+  landingX: X4 + 630,       // where the balloons set her down (the landing platform)
 };
 
 // ── Balloon journey ──

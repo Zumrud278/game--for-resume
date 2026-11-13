@@ -42,7 +42,9 @@ export class ParallaxBackground {
     const farF = 0.08;
     const far = span(farF);
     const dots = scene.add.graphics().setScrollFactor(farF).setDepth(-25);
-    for (let i = 0; i < 110; i++) {
+    // Densities scale with world width so the bigger map isn't sparse
+    const density = WORLD_WIDTH / 2900;
+    for (let i = 0; i < Math.round(110 * density); i++) {
       dots.fillStyle(0xffffff, rnd.realInRange(0.25, 0.8));
       dots.fillCircle(rnd.between(0, far.w), rnd.between(0, far.h * 0.7), rnd.realInRange(0.8, 1.8));
     }
@@ -50,7 +52,7 @@ export class ParallaxBackground {
     // ── Small twinkling star sprites ──
     const starF = 0.12;
     const starSpan = span(starF);
-    for (let i = 0; i < 26; i++) {
+    for (let i = 0; i < Math.round(26 * density); i++) {
       const key = i % 3 === 0 ? 'star' : 'star_small';
       const star = scene.add
         .image(rnd.between(20, starSpan.w - 20), rnd.between(20, starSpan.h * 0.6), key)
@@ -71,8 +73,8 @@ export class ParallaxBackground {
     }
 
     // ── Clouds: far (slow, faint) and near (faster, brighter) ──
-    this.addClouds(scene, rnd, { factor: 0.25, count: 7, scale: [0.9, 1.4], alpha: [0.35, 0.5], depth: -20, yRange: [0.15, 0.9] }, span);
-    this.addClouds(scene, rnd, { factor: 0.45, count: 5, scale: [1.3, 1.9], alpha: [0.5, 0.7], depth: -15, yRange: [0.45, 1.0] }, span);
+    this.addClouds(scene, rnd, { factor: 0.25, count: Math.round(7 * density), scale: [0.9, 1.4], alpha: [0.35, 0.5], depth: -20, yRange: [0.15, 0.9] }, span);
+    this.addClouds(scene, rnd, { factor: 0.45, count: Math.round(5 * density), scale: [1.3, 1.9], alpha: [0.5, 0.7], depth: -15, yRange: [0.45, 1.0] }, span);
   }
 
   addClouds(scene, rnd, opts, span) {

@@ -1,19 +1,22 @@
 import Phaser from 'phaser';
+import { PLAYER, GRAVITY } from '../utils/constants.js';
 
 const STAR_SCALE = 0.55;     // assets/effects/star.png → ~28px
 const RADIUS = 14;           // touch radius
 const LOW = 52;              // trail stars: at her chest height while walking
 const HIGH = 150;            // bonus stars: only reachable with a jump
 const TRAIL_PER_BRIDGE = 4;
+const CHEST = 45;            // her chest is ~45px above her feet
 
 /**
  * Collectible stars placed along the route: a trail on every bridge
  * (collected just by walking across), one high bonus star above each
- * bridge's middle (needs a jump), and one star on each island.
+ * bridge's middle (needs a jump), an arc over every jump gap (collected
+ * by jumping across), and one star on each island.
  * Each star can be collected once per playthrough.
  */
 export class Stars {
-  constructor(scene, islands, bridges) {
+  constructor(scene, islands, bridges, jumpGaps = []) {
     this.scene = scene;
     this.stars = [];
     this.collected = 0;
@@ -25,6 +28,18 @@ export class Stars {
       }
       const mid = (b.x1 + b.x2) / 2;
       this.add(mid, b.yAt(mid) - HIGH, true);
+    });
+
+    // An arc over every jump gap that traces her actual jump: taking off
+    // just before the edge at full speed, her chest passes through each star
+    jumpGaps.forEach((g) => {
+      const takeoff = g.x1 - 25;
+      [50, 100, 150].forEach((dx) => {
+        const x = g.x1 + dx;
+        const t = (x - takeoff) / PLAYER.speed;                        // seconds after take-off
+        const rise = -PLAYER.jumpVelocity * t - (GRAVITY / 2) * t * t; // height of her feet
+        this.add(x, g.y - rise - CHEST);
+      });
     });
 
     // One on each island before ACHIEVEMENTS, beside the sign, at walking height
