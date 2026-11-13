@@ -58,7 +58,9 @@ export class Island {
 
     // Floating sign above the island: [icon] LABEL
     if (config.label) {
-      const labelY = config.surfaceY - this.footprint.h * config.grassFrac - 34;
+      const labelY = config.labelAbove
+        ? config.surfaceY - config.labelAbove                       // fixed height above the grass
+        : config.surfaceY - this.footprint.h * config.grassFrac - 34;
       this.label = this.createSign(scene, config, Math.min(labelY, config.surfaceY - 150));
 
       scene.tweens.add({

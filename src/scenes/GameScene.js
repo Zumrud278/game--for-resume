@@ -11,6 +11,7 @@ import { Island } from '../entities/Island.js';
 import { Bridge } from '../entities/Bridge.js';
 import { Stars } from '../entities/Stars.js';
 import { BalloonRide } from '../entities/BalloonRide.js';
+import { IdleLife } from '../entities/IdleLife.js';
 import { ParallaxBackground } from '../effects/ParallaxBackground.js';
 import { RainbowDestination } from '../effects/RainbowDestination.js';
 import { Scenery } from '../effects/Scenery.js';
@@ -117,6 +118,7 @@ export class GameScene extends Phaser.Scene {
     this.wasd = this.input.keyboard.addKeys('W,A,S,D');
 
     this.arrived = false;      // reached the rainbow island (ending shown)
+    this.idleLife = new IdleLife(this, this.player);   // blinks, breathing, reactions there
     this.restarting = false;
 
     // ── UI overlay (level indicator, buttons, instructions) ──
@@ -160,6 +162,9 @@ export class GameScene extends Phaser.Scene {
     } else {
       this.player.update(input);
     }
+
+    // On the rainbow island she stays lively while standing still
+    this.idleLife.update(time, delta, rideInput, riding);
 
     // Collect any star she's touching
     this.stars.update(this.player.body);
@@ -280,6 +285,7 @@ export class GameScene extends Phaser.Scene {
     this.arrived = true;
     this.destination.reveal();          // in case she got here very fast
     this.destination.onLanded();
+    this.idleLife.start();
     // The ending quote appears where the island's "RAINBOW" sign floats — fade the sign out
     const sign = this.destination.island.label;
     if (sign) {

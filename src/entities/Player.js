@@ -22,6 +22,7 @@ export const texScale = (key) => (key === 'float' ? BALLOON.floatScale : PLAYER_
 
 export const POSE_ANCHOR_X = {
   idle: 0.645,
+  idle_blink: 0.645,
   run_1: 0.601,
   run_2: 0.599,
   run_3: 0.546,
@@ -167,6 +168,19 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       this.anims.timeScale = Phaser.Math.Clamp(Math.abs(newVx) / PLAYER.speed, 0.5, 1);
     }
 
+    // A short reaction pose (e.g. a cheer on the rainbow island) wins until it
+    // ends or she's steered
+    if (this.reaction) {
+      if (dir !== 0 || now >= this.reaction.until) {
+        this.reaction = null;
+      } else {
+        this.setPose(this.reaction.key);
+        this.prevFallSpeed = this.body.velocity.y;
+        this.wasOnGround = onGround;
+        return;
+      }
+    }
+
     // ── Pose ── (a jump started this frame counts as airborne immediately)
     const vy = this.body.velocity.y;
     if (!onGround || vy < 0) {
@@ -223,6 +237,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       x: this.x + (BALLOON.floatHand.x * k - ax) * (this.flipX ? -s : s),
       y: this.y - (f.realHeight - BALLOON.floatHand.y * k) * s,
     };
+  }
+
+  /** Show `key` (e.g. 'celebrate') for `ms`, unless she's steered first. */
+  playReaction(key, ms) {
+    this.reaction = { key, until: this.scene.time.now + ms };
   }
 
   // Place her standing at (x, feetY) with no momentum

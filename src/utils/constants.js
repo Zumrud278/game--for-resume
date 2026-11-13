@@ -72,10 +72,10 @@ const X5 = X4 + HALF.achievements + GAP + HALF.rainbow;
 
 export const ISLANDS = [
   { id: 'start', label: 'START', hudName: 'Start', icon: 'star', x: X0, surfaceY: GROUND,            key: 'island',        scale: 1.7,  grassFrac: 0.24 },
-  { ...fromResume('education'),                                   x: X1, surfaceY: GROUND,            key: 'island_2',      scale: 2.1,  grassFrac: 0.2  },
+  { ...fromResume('education'),                                   x: X1, surfaceY: GROUND,            key: 'island_2',      scale: 1.8,   grassFrac: 0.2  },
   { ...fromResume('skills'),                                      x: X2, surfaceY: GROUND,            key: 'island_3',      scale: 2.5,  grassFrac: 0.2  },
   { ...fromResume('projects'),                                    x: X3, surfaceY: GROUND - STEP,     key: 'island_4',      scale: 1.95, grassFrac: 0.13 },
-  { ...fromResume('achievements'),                                x: X4, surfaceY: GROUND - STEP - LIFT, key: 'trophy_island', scale: 1.7,  grassFrac: 0.44 },
+  { ...fromResume('achievements'),                                x: X4, surfaceY: GROUND - STEP - LIFT, key: 'trophy_island', scale: 1.7,  grassFrac: 0.44, labelAbove: 245 },
 ];
 
 // Small stepping-stone rocks in the middle of each crossing, with a jump

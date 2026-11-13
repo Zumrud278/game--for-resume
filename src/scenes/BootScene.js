@@ -4,6 +4,54 @@ import { prescaleTexture, polishTexture } from '../utils/textureQuality.js';
 
 const CHARACTER_KEYS = ['idle', 'jump', 'fall', 'land', 'celebrate', 'float', 'run_1', 'run_2', 'run_3'];
 
+/**
+ * 'idle_blink': a copy of the idle pose with her eyes closed. Inside two small
+ * boxes around the eyes (below her fringe), only eye pixels (whites, irises,
+ * lashes) are painted with her skin tone — skin, blush and hair are kept —
+ * then a soft closed-lid curve is drawn, like her closed eyes in other poses.
+ * Coordinates are in the original idle.png (139×203).
+ */
+function makeBlinkTexture(scene) {
+  const src = scene.textures.get('idle').getSourceImage();
+  const c = document.createElement('canvas');
+  c.width = src.width;
+  c.height = src.height;
+  const ctx = c.getContext('2d');
+  ctx.drawImage(src, 0, 0);
+  const img = ctx.getImageData(0, 0, c.width, c.height);
+  const d = img.data;
+  const isSkin = (r, g, b) => r > 225 && g >= 160 && g <= 220 && b >= 120 && b <= 190;
+  const isBlush = (r, g, b) => r > 215 && g < 165 && b < 175 && r - g > 60;
+  const boxes = [[78, 53, 97, 66], [101, 53, 116, 66]];
+  boxes.forEach(([x0, y0, x1, y1]) => {
+    for (let y = y0; y <= y1; y++) {
+      for (let x = x0; x <= x1; x++) {
+        const i = (y * c.width + x) * 4;
+        const [r, g, b, a] = [d[i], d[i + 1], d[i + 2], d[i + 3]];
+        if (a > 200 && !isSkin(r, g, b) && !isBlush(r, g, b)) {
+          d[i] = 253; d[i + 1] = 201; d[i + 2] = 162;
+        }
+      }
+    }
+  });
+  ctx.putImageData(img, 0, 0);
+  ctx.strokeStyle = 'rgb(74,36,44)';
+  ctx.lineWidth = 2;
+  ctx.lineCap = 'round';
+  boxes.forEach(([x0, y0, x1, y1]) => {
+    const cx = (x0 + x1) / 2, w = (x1 - x0) / 2, base = y0 + (y1 - y0) * 0.55;
+    ctx.beginPath();
+    for (let k = 0; k <= 20; k++) {
+      const t = k / 10 - 1;
+      const x = cx + t * w * 0.9, y = base + (1 - t * t) * 2;
+      k ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+    }
+    ctx.stroke();
+  });
+  if (scene.textures.exists('idle_blink')) scene.textures.remove('idle_blink');
+  scene.textures.addCanvas('idle_blink', c);
+}
+
 export class BootScene extends Phaser.Scene {
   constructor() {
     super({ key: 'Boot' });
@@ -66,7 +114,8 @@ export class BootScene extends Phaser.Scene {
     this.load.image('island_3', 'assets/islands/island_3.png');
     this.load.image('island_4', 'assets/islands/island_4.png');
     this.load.image('castle_island', 'assets/islands/castle-island.png');
-    this.load.image('trophy_island', 'assets/islands/trophy-island.png');
+    // Achievements island without the trophy (derived from trophy-island.png, same size)
+    this.load.image('trophy_island', 'assets/islands/achievements-island.png');
 
     // ── Objects ──
     this.load.image('balloons', 'assets/objects/balloons.png');
@@ -106,6 +155,11 @@ export class BootScene extends Phaser.Scene {
     // Character: every pose drawn once at its exact in-game size, so she's
     // rendered 1:1 — her eyes and fine details stay stable while she moves
     prescaleTexture(this, 'idle', 0.75, 'idle_menu');   // start-screen copy (its own size)
+    // Blink frame for her idle animations on the rainbow island (eyes closed)
+    if (!this.missing.includes('idle')) {
+      makeBlinkTexture(this);
+      prescaleTexture(this, 'idle_blink', PLAYER_SCALE);
+    }
     CHARACTER_KEYS.forEach((key) => {
       prescaleTexture(this, key, key === 'float' ? BALLOON.floatScale : PLAYER_SCALE);
     });
