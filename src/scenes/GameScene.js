@@ -9,6 +9,7 @@ import {
 } from '../utils/constants.js';
 import { Player } from '../entities/Player.js';
 import { Island } from '../entities/Island.js';
+import { Bridge } from '../entities/Bridge.js';
 import { ParallaxBackground } from '../effects/ParallaxBackground.js';
 import { RainbowDestination } from '../effects/RainbowDestination.js';
 import { SkyCorridor } from '../effects/SkyCorridor.js';
@@ -38,6 +39,27 @@ export class GameScene extends Phaser.Scene {
     // Left wall sits at the START island's edge so she can't walk off the back
     const startLeft = this.islands[0].collider.body.left + 10;
     this.physics.world.setBounds(startLeft, 0, WORLD_WIDTH - startLeft, WORLD_HEIGHT);
+
+    // ── Wooden bridges between consecutive islands ──
+    // From one island's grass edge to the next one's (level across the
+    // ground row, sloping up to PROJECTS and ACHIEVEMENTS)
+    this.bridges = this.islands.slice(0, -1).map((island, i) => {
+      const next = this.islands[i + 1];
+      return new Bridge(
+        this,
+        { x: island.collider.body.right, y: island.surfaceY },
+        { x: next.collider.body.left, y: next.surfaceY }
+      );
+    });
+    this.wasOnBridge = false;
+    // Checked after EVERY physics step (a slow frame can run several steps),
+    // so she can never move past a deck between two checks
+    this.physics.world.on(Phaser.Physics.Arcade.Events.WORLD_STEP, this.standOnBridges, this);
+    // (On restart Phaser may already have destroyed the world — and its
+    // listeners with it — before this runs, hence the ?.)
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.physics.world?.off(Phaser.Physics.Arcade.Events.WORLD_STEP, this.standOnBridges, this);
+    });
 
     this.platforms = this.physics.add.staticGroup();
     [...this.islands, this.destination.island].forEach((island) => {
@@ -92,6 +114,7 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
+
     // While a resume panel is open, she stands still (keys are ignored)
     const c = this.cursors;
     const mobile = this.scene.get('UI')?.mobileControls;
@@ -118,6 +141,33 @@ export class GameScene extends Phaser.Scene {
     if (this.player.y > WORLD_HEIGHT + 150) this.respawn();
 
     this.checkJourneyTrigger(delta);
+  }
+
+  // Bridges are line segments (Arcade physics has no slopes): when her feet
+  // reach the deck while falling or walking, hold them exactly on it.
+  // One-way like the islands — while rising she passes up through it.
+  standOnBridges() {
+    const body = this.player?.body;
+    if (!body?.enable) return;
+    const x = body.position.x + body.halfWidth;
+    const bridge = this.bridges.find((b) => b.covers(x));
+    if (!bridge || body.velocity.y < 0) {
+      this.wasOnBridge = false;
+      return;
+    }
+    const below = body.bottom - bridge.yAt(x);      // > 0: feet below the deck
+    // Already walking (on the bridge or the island before it) → stay attached
+    // going downhill, where the deck drops a few px per frame; otherwise only
+    // catch feet that actually reach the deck
+    const reachAbove = this.wasOnBridge || this.player.wasOnGround ? 14 : 2;
+    if (below >= -reachAbove && below <= 22) {
+      body.y -= below;            // the sprite follows the body after the step
+      body.velocity.y = 0;
+      body.blocked.down = true;
+      this.wasOnBridge = true;
+    } else {
+      this.wasOnBridge = false;
+    }
   }
 
   // Resume panel or ending card open → game input is paused
