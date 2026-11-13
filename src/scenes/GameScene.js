@@ -4,7 +4,6 @@ import {
   WORLD_HEIGHT,
   ISLANDS,
   CAMERA_LOOKAHEAD,
-  BALLOON,
   ROUTE,
 } from '../utils/constants.js';
 import { Player } from '../entities/Player.js';
@@ -14,8 +13,6 @@ import { Stars } from '../entities/Stars.js';
 import { BalloonRide } from '../entities/BalloonRide.js';
 import { ParallaxBackground } from '../effects/ParallaxBackground.js';
 import { RainbowDestination } from '../effects/RainbowDestination.js';
-import { SkyCorridor } from '../effects/SkyCorridor.js';
-import { BalloonJourney } from '../effects/BalloonJourney.js';
 
 // Index used for the rainbow island in island-changed events
 export const DESTINATION_INDEX = ISLANDS.length;
@@ -33,10 +30,9 @@ export class GameScene extends Phaser.Scene {
     // ── Background ──
     this.background = new ParallaxBackground(this);
 
-    // ── Islands: START → EDUCATION → SKILLS → PROJECTS → ACHIEVEMENTS ──
+    // ── Islands: START → EDUCATION → SKILLS → PROJECTS → ACHIEVEMENTS → RAINBOW ──
     this.islands = ISLANDS.map((cfg, i) => new Island(this, cfg, i));
     this.destination = new RainbowDestination(this);
-    this.skyCorridor = new SkyCorridor(this);   // clouds & stars along the balloon route
 
     // Left wall sits at the START island's edge so she can't walk off the back
     const startLeft = this.islands[0].collider.body.left + 10;
@@ -87,6 +83,7 @@ export class GameScene extends Phaser.Scene {
       if (!player.body.touching.down || !zone.island) return;
       this.checkpoint = { x: zone.island.x, y: zone.island.surfaceY };
       if (zone.island.index >= 0) this.setCurrentIsland(zone.island.index);
+      if (zone.island.index === DESTINATION_INDEX) this.arrive();
     });
 
     // ── Camera: fixed zoom, smooth follow, clamped to the world ──
@@ -104,10 +101,7 @@ export class GameScene extends Phaser.Scene {
     this.cursors = this.input.keyboard.createCursorKeys();
     this.wasd = this.input.keyboard.addKeys('W,A,S,D');
 
-    // ── Balloon journey (starts after ACHIEVEMENTS is completed) ──
-    this.journey = new BalloonJourney(this, this.player, this.destination);
-    this.journeyStarted = false;
-    this.achievementTime = 0;
+    this.arrived = false;      // reached the rainbow island (ending shown)
     this.restarting = false;
 
     // ── UI overlay (level indicator, buttons, instructions) ──
@@ -119,12 +113,6 @@ export class GameScene extends Phaser.Scene {
 
     const cam = this.cameras.main;
     this.background.update(cam.scrollX, cam.scrollY);
-
-    // During the journey the flight is fully scripted
-    if (this.journey.active) {
-      this.journey.update(time);
-      return;
-    }
 
 
     // While a resume panel is open, she stands still (keys are ignored)
@@ -164,11 +152,14 @@ export class GameScene extends Phaser.Scene {
     // Fell below the world → back to the last island stood on
     if (this.player.y > WORLD_HEIGHT + 150) this.respawn();
 
-    this.checkJourneyTrigger(delta);
+    // Heading on from ACHIEVEMENTS: the rainbow sweeps into view ahead of her
+    if (!this.destination.revealed && this.player.x > this.islands[this.islands.length - 1].x + 60) {
+      this.destination.reveal();
+    }
   }
 
   /**
-   * Builds each crossing between two nodes:
+   * Builds each crossing between two nodes (the rainbow island is the last node):
    *   [node] ══bridge══ (rock) ~~ jump gap ~~ (rock) ══bridge══ [node]
    * The rocks sit halfway up any height difference; the bridges take the climb.
    */
@@ -180,8 +171,9 @@ export class GameScene extends Phaser.Scene {
     this.rocks = [];
     this.bridges = [];
     this.jumpGaps = [];
-    this.islands.slice(0, -1).forEach((a, i) => {
-      const b = this.islands[i + 1];
+    const nodes = [...this.islands, this.destination.island];
+    nodes.slice(0, -1).forEach((a, i) => {
+      const b = nodes[i + 1];
       const left = a.collider.body.right;
       const right = b.collider.body.left;
 
@@ -255,25 +247,20 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
-  // Level 4 (Achievements) is complete once she has landed on its island
-  // and the achievements panel has been closed
-  checkJourneyTrigger(delta) {
-    if (this.journeyStarted) return;
-    const onAchievements =
-      this.currentIsland === ISLANDS.length - 1 && this.player.onGround && !this.isPanelOpen();
-    this.achievementTime = onAchievements ? this.achievementTime + delta : 0;
-    if (this.achievementTime >= BALLOON.triggerDelayMs) this.startJourney();
-  }
-
-  startJourney() {
-    if (this.journeyStarted) return;
-    this.journeyStarted = true;
-    this.lookAhead = 0;
-    this.events.emit('journey-start');
-    this.journey.start(() => {
-      this.setCurrentIsland(DESTINATION_INDEX);
-      this.events.emit('journey-complete');
-    });
+  // She walked onto the rainbow island: light the landing platform, then the
+  // ending (quote + contact card) plays — once per playthrough
+  arrive() {
+    if (this.arrived) return;
+    this.arrived = true;
+    this.destination.reveal();          // in case she got here very fast
+    this.destination.onLanded();
+    // The ending quote appears where the island's "RAINBOW" sign floats — fade the sign out
+    const sign = this.destination.island.label;
+    if (sign) {
+      this.tweens.killTweensOf(sign);
+      this.tweens.add({ targets: sign, alpha: 0, duration: 500 });
+    }
+    this.time.delayedCall(700, () => this.events.emit('journey-complete'));
   }
 
   setCurrentIsland(index) {

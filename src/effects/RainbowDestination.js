@@ -127,7 +127,7 @@ export class RainbowDestination {
     this.padPos = { x, y };
   }
 
-  // Called by the balloon journey on touchdown
+  // Called when she first steps onto the rainbow island
   onLanded() {
     const scene = this.scene;
     const { x, y } = this.padPos;
@@ -196,7 +196,7 @@ export class RainbowDestination {
     });
   }
 
-  // Sweep the rainbow into view (called during the balloon journey)
+  // Sweep the rainbow into view (as she heads on from ACHIEVEMENTS)
   reveal(duration = 2600) {
     if (this.revealed) return;
     this.revealed = true;

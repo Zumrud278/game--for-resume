@@ -5,9 +5,8 @@ export const GAME_WIDTH = 1280;
 export const GAME_HEIGHT = 720;
 
 // ── World dimensions ──
-export const WORLD_WIDTH = 6000;
-// Tall world: the climb happens at the bottom, the balloon journey
-// carries her ~1670px straight up to the rainbow island at the top.
+export const WORLD_WIDTH = 6600;   // room for the rainbow island after ACHIEVEMENTS
+// Tall world: the route climbs from the ground row up to the rainbow island
 export const WORLD_HEIGHT = 3600;
 
 // ── Player physics ──
@@ -62,12 +61,14 @@ const LIFT = 700;
 
 // Node x positions are chained so each gap is exactly GAP wide
 // (half-widths = half of each island's walkable top)
-const HALF = { start: 142, education: 119, skills: 119, projects: 120, achievements: 120 };
+const HALF = { start: 142, education: 119, skills: 119, projects: 120, achievements: 120, rainbow: 136 };
 const X0 = 240;
 const X1 = X0 + HALF.start + GAP + HALF.education;
 const X2 = X1 + HALF.education + GAP + HALF.skills;
 const X3 = X2 + HALF.skills + GAP + HALF.projects;
 const X4 = X3 + HALF.projects + GAP + HALF.achievements;
+// The rainbow island is the next node after ACHIEVEMENTS: same GAP, one STEP up
+const X5 = X4 + HALF.achievements + GAP + HALF.rainbow;
 
 export const ISLANDS = [
   { id: 'start', label: 'START', hudName: 'Start', icon: 'star', x: X0, surfaceY: GROUND,            key: 'island',        scale: 1.7,  grassFrac: 0.24 },
@@ -86,19 +87,19 @@ export const ROUTE = {
 };
 
 // ── Final rainbow destination ──
-// ~1670px ABOVE the achievements island and offset to the right.
-// Out of jumping reach — the balloon journey carries her up here.
+// The last node of the route, right after ACHIEVEMENTS and connected the same
+// way as every other level (bridges, stepping rocks, a jump) — one STEP higher.
 export const DESTINATION = {
   id: 'rainbow',
   label: 'RAINBOW',
   icon: 'star',
   hudName: 'Rainbow Island',
-  x: X4 + 650,
-  surfaceY: 520,
+  x: X5,
+  surfaceY: GROUND - STEP - LIFT - STEP,
   key: 'castle_island',
   scale: 1.25,          // small fantasy castle under a large rainbow
   grassFrac: 0.53,
-  landingX: X4 + 630,       // where the balloons set her down (the landing platform)
+  landingX: X5 - 20,    // the glowing landing platform in front of the castle gate
 };
 
 // ── Balloon journey ──
