@@ -10,6 +10,7 @@ import {
 import { Player } from '../entities/Player.js';
 import { Island } from '../entities/Island.js';
 import { Bridge } from '../entities/Bridge.js';
+import { Stars } from '../entities/Stars.js';
 import { ParallaxBackground } from '../effects/ParallaxBackground.js';
 import { RainbowDestination } from '../effects/RainbowDestination.js';
 import { SkyCorridor } from '../effects/SkyCorridor.js';
@@ -60,6 +61,9 @@ export class GameScene extends Phaser.Scene {
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.physics.world?.off(Phaser.Physics.Arcade.Events.WORLD_STEP, this.standOnBridges, this);
     });
+
+    // ── Collectible stars along the route ──
+    this.stars = new Stars(this, this.islands, this.bridges);
 
     this.platforms = this.physics.add.staticGroup();
     [...this.islands, this.destination.island].forEach((island) => {
@@ -131,6 +135,9 @@ export class GameScene extends Phaser.Scene {
     } else {
       this.player.update(input);
     }
+
+    // Collect any star she's touching
+    this.stars.update(this.player.body);
 
     // Camera look-ahead eases toward the facing direction
     const target = -this.player.facing * CAMERA_LOOKAHEAD;

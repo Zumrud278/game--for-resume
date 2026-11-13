@@ -16,6 +16,7 @@ export class HUD {
     const { width, height } = scene.scale.gameSize;
 
     this.createLevelIndicator();
+    this.createStarCounter();
     this.createExploreButton(width);
     this.createInstructions(width, height);
   }
@@ -74,6 +75,36 @@ export class HUD {
       duration: 250,
       ease: 'Back.easeOut',
     });
+  }
+
+  // ── Under the level badge: collected stars ──
+  createStarCounter() {
+    const h = 34;
+    this.starBox = this.scene.add.container(MARGIN, MARGIN + 56).setDepth(150);
+    this.starBg = this.scene.add.graphics();
+    const icon = this.scene.add.image(18, h / 2, 'star').setScale(0.4);
+    this.starText = this.scene.add.text(36, h / 2, '', {
+      fontFamily: FONT_FAMILY,
+      fontSize: '17px',
+      fontStyle: 'bold',
+      color: '#FFE37A',
+    }).setOrigin(0, 0.5);
+    this.starBox.add([this.starBg, icon, this.starText]);
+    this.setStars(0, 0, false);
+  }
+
+  setStars(count, total, pulse = true) {
+    this.starText.setText(`${count} / ${total}`);
+    const w = 48 + this.starText.width;
+    const h = 34;
+    this.starBg.clear();
+    this.starBg.fillStyle(0x2D1B4E, 0.85);
+    this.starBg.fillRoundedRect(0, 0, w, h, h / 2);
+    this.starBg.lineStyle(2, count && count === total ? 0xFFD700 : 0xC9A0DC, 1);
+    this.starBg.strokeRoundedRect(0, 0, w, h, h / 2);
+    if (pulse) {
+      this.scene.tweens.add({ targets: this.starBox, scale: { from: 1.15, to: 1 }, duration: 260, ease: 'Back.easeOut' });
+    }
   }
 
   // ── Upper-right: Explore Resume button ──

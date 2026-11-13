@@ -5,7 +5,7 @@ export const GAME_WIDTH = 1280;
 export const GAME_HEIGHT = 720;
 
 // ── World dimensions ──
-export const WORLD_WIDTH = 2900;
+export const WORLD_WIDTH = 3600;
 // Tall world: the climb happens at the bottom, the balloon journey
 // carries her ~1670px straight up to the rainbow island at the top.
 export const WORLD_HEIGHT = 2900;
@@ -22,7 +22,7 @@ export const PLAYER = {
   groundDecel: 2600,     // braking when no key is held on the ground
   airAccel: 1400,        // a little less control in the air
   airDecel: 700,         // keep some momentum mid-jump
-  jumpVelocity: -640,    // full jump peak ≈ 186px (each upward step is 120px)
+  jumpVelocity: -640,    // full jump peak ≈ 186px (bridges connect the islands)
   jumpCutFactor: 0.45,   // release jump early → shorter hop
   maxFallSpeed: 900,     // 15px per physics step < platform thickness
   coyoteMs: 100,         // can still jump just after walking off an edge
@@ -48,19 +48,29 @@ const fromResume = (id) => ({
 });
 
 // Layout (surfaceY = grass height; smaller = higher):
-//   Ground row — START, EDUCATION, SKILLS on the same level, 180px gaps
-//   Upper tier — PROJECTS one 120px step up, ACHIEVEMENTS one more step up
-// Her jump reaches 186px high and 326px across on the level (260px when
-// jumping 120px up), so every gap is clearly visible but comfortable.
+//   Ground row — START, EDUCATION, SKILLS on the same level
+//   Upper tier — PROJECTS one STEP up, ACHIEVEMENTS one more STEP up
+// GAP = space between the walkable edges of neighbouring islands; wooden
+// bridges span every gap (see entities/Bridge.js).
 const GROUND = 2630;
-const STEP = 120;
+const STEP = 200;
+const GAP = 320;
+
+// Island x positions are chained so each gap is exactly GAP wide
+// (half-widths = half of each island's walkable top)
+const HALF = { start: 142, education: 119, skills: 119, projects: 120, achievements: 120 };
+const X0 = 240;
+const X1 = X0 + HALF.start + GAP + HALF.education;
+const X2 = X1 + HALF.education + GAP + HALF.skills;
+const X3 = X2 + HALF.skills + GAP + HALF.projects;
+const X4 = X3 + HALF.projects + GAP + HALF.achievements;
 
 export const ISLANDS = [
-  { id: 'start', label: 'START', hudName: 'Start', icon: 'star', x: 240,  surfaceY: GROUND,            key: 'island',        scale: 1.7,  grassFrac: 0.24 },
-  { ...fromResume('education'),                                   x: 682,  surfaceY: GROUND,            key: 'island_2',      scale: 2.1,  grassFrac: 0.2  },
-  { ...fromResume('skills'),                                      x: 1100, surfaceY: GROUND,            key: 'island_3',      scale: 2.5,  grassFrac: 0.2  },
-  { ...fromResume('projects'),                                    x: 1509, surfaceY: GROUND - STEP,     key: 'island_4',      scale: 1.95, grassFrac: 0.13 },
-  { ...fromResume('achievements'),                                x: 1919, surfaceY: GROUND - STEP * 2, key: 'trophy_island', scale: 1.7,  grassFrac: 0.44 },
+  { id: 'start', label: 'START', hudName: 'Start', icon: 'star', x: X0, surfaceY: GROUND,            key: 'island',        scale: 1.7,  grassFrac: 0.24 },
+  { ...fromResume('education'),                                   x: X1, surfaceY: GROUND,            key: 'island_2',      scale: 2.1,  grassFrac: 0.2  },
+  { ...fromResume('skills'),                                      x: X2, surfaceY: GROUND,            key: 'island_3',      scale: 2.5,  grassFrac: 0.2  },
+  { ...fromResume('projects'),                                    x: X3, surfaceY: GROUND - STEP,     key: 'island_4',      scale: 1.95, grassFrac: 0.13 },
+  { ...fromResume('achievements'),                                x: X4, surfaceY: GROUND - STEP * 2, key: 'trophy_island', scale: 1.7,  grassFrac: 0.44 },
 ];
 
 // ── Final rainbow destination ──
@@ -71,12 +81,12 @@ export const DESTINATION = {
   label: 'RAINBOW',
   icon: 'star',
   hudName: 'Rainbow Island',
-  x: 2400,
+  x: 3150,
   surfaceY: 520,
   key: 'castle_island',
   scale: 1.25,          // small fantasy castle under a large rainbow
   grassFrac: 0.53,
-  landingX: 2380,       // where the balloons set her down (the landing platform)
+  landingX: 3130,       // where the balloons set her down (the landing platform)
 };
 
 // ── Balloon journey ──

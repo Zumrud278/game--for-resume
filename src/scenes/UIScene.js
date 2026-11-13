@@ -35,6 +35,11 @@ export class UIScene extends Phaser.Scene {
     };
     gameScene.events.on('island-changed', onIsland);
 
+    // Star counter
+    this.hud.setStars(0, gameScene.stars.total, false);
+    const onStar = (count, total) => this.hud.setStars(count, total);
+    gameScene.events.on('star-collected', onStar);
+
     // Balloon journey: controls are paused, so say what's happening
     const onJourneyStart = () => this.hud.setInstructions('✦  The balloons are carrying you to the Rainbow…  ✦');
     const onJourneyEnd = () => {
@@ -49,6 +54,7 @@ export class UIScene extends Phaser.Scene {
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       gameScene.events.off('island-changed', onIsland);
+      gameScene.events.off('star-collected', onStar);
       gameScene.events.off('journey-start', onJourneyStart);
       gameScene.events.off('journey-complete', onJourneyEnd);
       this.panel.destroy();
