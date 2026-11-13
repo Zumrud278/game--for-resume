@@ -22,7 +22,7 @@ export const PLAYER = {
   groundDecel: 2600,     // braking when no key is held on the ground
   airAccel: 1400,        // a little less control in the air
   airDecel: 700,         // keep some momentum mid-jump
-  jumpVelocity: -640,    // full jump peak ≈ 186px (each step is 110px)
+  jumpVelocity: -640,    // full jump peak ≈ 186px (each upward step is 120px)
   jumpCutFactor: 0.45,   // release jump early → shorter hop
   maxFallSpeed: 900,     // 15px per physics step < platform thickness
   coyoteMs: 100,         // can still jump just after walking off an edge
@@ -47,12 +47,20 @@ const fromResume = (id) => ({
   icon: RESUME_SECTIONS[id].icon,
 });
 
+// Layout (surfaceY = grass height; smaller = higher):
+//   Ground row — START, EDUCATION, SKILLS on the same level, 180px gaps
+//   Upper tier — PROJECTS one 120px step up, ACHIEVEMENTS one more step up
+// Her jump reaches 186px high and 326px across on the level (260px when
+// jumping 120px up), so every gap is clearly visible but comfortable.
+const GROUND = 2630;
+const STEP = 120;
+
 export const ISLANDS = [
-  { id: 'start', label: 'START', hudName: 'Start', icon: 'star', x: 240,  surfaceY: 2630, key: 'island',        scale: 1.7,  grassFrac: 0.24 },
-  { ...fromResume('education'),                                   x: 660,  surfaceY: 2520, key: 'island_2',      scale: 2.1,  grassFrac: 0.2  },
-  { ...fromResume('skills'),                                      x: 1080, surfaceY: 2410, key: 'island_3',      scale: 2.5,  grassFrac: 0.2  },
-  { ...fromResume('projects'),                                    x: 1500, surfaceY: 2300, key: 'island_4',      scale: 1.95, grassFrac: 0.13 },
-  { ...fromResume('achievements'),                                x: 1920, surfaceY: 2190, key: 'trophy_island', scale: 1.7,  grassFrac: 0.44 },
+  { id: 'start', label: 'START', hudName: 'Start', icon: 'star', x: 240,  surfaceY: GROUND,            key: 'island',        scale: 1.7,  grassFrac: 0.24 },
+  { ...fromResume('education'),                                   x: 682,  surfaceY: GROUND,            key: 'island_2',      scale: 2.1,  grassFrac: 0.2  },
+  { ...fromResume('skills'),                                      x: 1100, surfaceY: GROUND,            key: 'island_3',      scale: 2.5,  grassFrac: 0.2  },
+  { ...fromResume('projects'),                                    x: 1509, surfaceY: GROUND - STEP,     key: 'island_4',      scale: 1.95, grassFrac: 0.13 },
+  { ...fromResume('achievements'),                                x: 1919, surfaceY: GROUND - STEP * 2, key: 'trophy_island', scale: 1.7,  grassFrac: 0.44 },
 ];
 
 // ── Final rainbow destination ──
