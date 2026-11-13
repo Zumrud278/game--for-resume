@@ -1660,3 +1660,61 @@ All four issues are fixed, and the rest of the game is unchanged. All 8 test sui
 - **Follows the window:** the sky, forest, glow, foreground plants and vignette always fit the screen, and the HUD and start screen adjust when the window is resized.
 
 **Files:** `gameConfig.js`, `Player.js`, `GameScene.js`, `BalloonRide.js`, `HUD.js`, `UIScene.js`, `ParallaxBackground.js`, `Scenery.js`, `MenuScene.js`, `main.js`, and the deleted `AmbientBackdrop.js`. Nothing is committed.
+
+
+---
+---
+
+# 📅 Session 3 — 14 November 2026
+
+## Turn 23 — Idle life on the rainbow island, no trophy on Achievements, smaller Education
+
+### 👤 You
+
+> Fix only these three things:
+>
+> 1. **Final destination:** Add natural idle animations when the character reaches the rainbow, such as blinking, subtle movements, and occasional reactions. She should not remain completely still.
+> 2. **Achievements node:** Remove the trophy symbol.
+> 3. **Education node:** Reduce its size slightly so the entire node, including its bottom, is clearly visible.
+>
+> Preserve everything else, including the existing design, layout, and functionality. Do not make unnecessary changes.
+
+<details>
+<summary><b>Work done</b></summary>
+
+- **Idle life (new `src/entities/IdleLife.js`):**
+  - starts when she arrives at the rainbow island
+  - blinks every 2–5 seconds (sometimes a double blink), using a closed-eye frame built at load time from her own idle pose; only eye pixels are painted with skin tone and a soft lash curve is added, leaving hair and blush untouched
+  - gentle 1px breathing through a visual twin, so her physics body never moves and she stays drawn 1:1 (no eye distortion)
+  - turns to look the other way now and then
+  - a happy cheer every 9–15 seconds: celebrate pose, little hop and sparkles
+  - stops the moment she's steered and resumes after she's stood still for a moment
+  - **Bug fixed:** the twin lagged one frame during the hop; it's now positioned after physics.
+- **Achievements:**
+  - removed the trophy, laurels, sparkles and glow from the island picture
+  - repainted the grass under the pedestal by mirroring neighbouring grass in from both sides, with a cross-fade in the middle
+  - saved as a **new** file, `assets/islands/achievements-island.png` (same 181×227 size, so platforms and connections are identical); the original `trophy-island.png` is untouched
+  - its sign set to 245px above the grass so it clears the down-balloon and the "Ride down" hint (checked: no overlaps)
+- **Education:** scale 2.1 → 1.8. Its bottom tip moved from y=680, hidden behind the controls bar, to y=647, fully visible. Node positions are unchanged; the bridges lengthen about 16px each side to meet it.
+- **Files:** `IdleLife.js` (new), `Player.js` (short reaction poses), `BootScene.js` (blink frame, new island image), `GameScene.js`, `Island.js` (optional fixed sign height), `constants.js`, `assets/islands/achievements-island.png` (new).
+- **Tests:** all 9 suites passed (178 checks), including the new idle-life suite (10 checks).
+
+</details>
+
+### 🤖 Claude
+
+All three are done; nothing else changed.
+
+**1. She's lively at the rainbow island**
+- **Blinking:** every few seconds, sometimes twice.
+- **Breathing:** a gentle 1px rise and fall.
+- **Looking around:** she turns to face the other way now and then.
+- **Reactions:** a happy cheer with a little hop and sparkles every 9–15 seconds.
+- **When you move her:** it all stops immediately, and starts again once she stands still.
+- **Unchanged:** her feet stay exactly on the grass, and her eyes stay crisp.
+
+**2. Achievements:** the trophy, its laurels and sparkles are gone, and the grass underneath is repainted to look natural. I saved this as a new image and left your original untouched. The node's sign now sits clear of the balloon and its hint. The small trophy icon *inside* the sign pill is still there; I can change it too if you'd like.
+
+**3. Education:** about 14% smaller, so its whole node, including the bottom tip, is visible above the controls bar. Its position is the same, and the bridges simply reach a little further to meet it.
+
+All 9 test suites pass (178 checks). Nothing is committed.
