@@ -1,6 +1,5 @@
 import Phaser from 'phaser';
-import { PLAYER_SCALE, COLORS, FONT_FAMILY } from '../utils/constants.js';
-import { RESUME } from '../data/resume.js';
+import { PLAYER_SCALE, COLORS } from '../utils/constants.js';
 
 export class MenuScene extends Phaser.Scene {
   constructor() {
@@ -71,9 +70,9 @@ export class MenuScene extends Phaser.Scene {
       });
     }
 
-    // ── Character idle ──
+    // ── Character idle ── (centred in the open sky above the horizon)
     const charScale = PLAYER_SCALE * 1.5;
-    const charY = height * 0.68;
+    const charY = height * 0.5;
     const character = this.add.image(width / 2, charY, 'idle')
       .setScale(charScale);
 
@@ -86,32 +85,8 @@ export class MenuScene extends Phaser.Scene {
       ease: 'Sine.easeInOut',
     });
 
-    // ── Speech bubble above character ──
-    const bubble = this.add.image(width / 2, charY - 120, 'speech_bubble')
-      .setScale(0.85);
-
-    // Greeting text inside bubble
-    const greeting = RESUME.greeting || `Hi! I'm ${RESUME.name}`;
-    this.add.text(width / 2, charY - 125, greeting, {
-      fontFamily: FONT_FAMILY,
-      fontSize: '14px',
-      color: '#2D1B4E',
-      align: 'center',
-      wordWrap: { width: 200 },
-    }).setOrigin(0.5);
-
-    // ── Title ──
-    this.add.text(width / 2, height * 0.12, `${RESUME.name}'s Adventure`, {
-      fontFamily: FONT_FAMILY,
-      fontSize: '36px',
-      fontStyle: 'bold',
-      color: '#FFD700',
-      stroke: '#2D1B4E',
-      strokeThickness: 4,
-    }).setOrigin(0.5);
-
-    // ── Start button ──
-    const startBtn = this.add.image(width / 2, height * 0.88, 'start')
+    // ── Start button ── (below her, inside the bottom sky band)
+    const startBtn = this.add.image(width / 2, height * 0.82, 'start')
       .setScale(0.85)
       .setInteractive({ useHandCursor: true });
 

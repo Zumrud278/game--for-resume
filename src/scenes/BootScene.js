@@ -94,7 +94,6 @@ export class BootScene extends Phaser.Scene {
     this.load.image('back', 'assets/ui/back.png');
     this.load.image('dpad', 'assets/ui/dpad.png');
     this.load.image('space_jump', 'assets/ui/space-jump.png');
-    this.load.image('speech_bubble', 'assets/ui/speech-bubble.png');
     this.load.image('social_bar', 'assets/ui/social-bar.png');
     this.load.image('hud_hearts', 'assets/ui/hud-hearts.png');
     this.load.image('level', 'assets/ui/level.png');
