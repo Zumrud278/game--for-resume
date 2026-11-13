@@ -13,6 +13,7 @@ import { Stars } from '../entities/Stars.js';
 import { BalloonRide } from '../entities/BalloonRide.js';
 import { ParallaxBackground } from '../effects/ParallaxBackground.js';
 import { RainbowDestination } from '../effects/RainbowDestination.js';
+import { Scenery } from '../effects/Scenery.js';
 
 // Index used for the rainbow island in island-changed events
 export const DESTINATION_INDEX = ISLANDS.length;
@@ -40,6 +41,10 @@ export class GameScene extends Phaser.Scene {
 
     // ── The route between nodes: bridges, stepping-stone rocks, jump gaps ──
     this.buildRoute();
+
+    // ── Environment depth & atmosphere (visual only: forest layers, glows, spores) ──
+    this.scenery = new Scenery(this, [...this.islands, ...this.rocks, this.destination.island]
+      .map((i) => ({ x: i.x, surfaceY: i.surfaceY, width: i.width })));
     this.wasOnBridge = false;
     // Checked after EVERY physics step (a slow frame can run several steps),
     // so she can never move past a deck between two checks
@@ -113,6 +118,7 @@ export class GameScene extends Phaser.Scene {
 
     const cam = this.cameras.main;
     this.background.update(cam.scrollX, cam.scrollY);
+    this.scenery.update(cam.scrollX, cam.scrollY);
 
 
     // While a resume panel is open, she stands still (keys are ignored)
