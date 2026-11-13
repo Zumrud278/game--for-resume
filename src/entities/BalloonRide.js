@@ -2,7 +2,10 @@ import Phaser from 'phaser';
 import { BALLOON, BALLOON_RIDE } from '../utils/constants.js';
 
 /**
- * The balloon after PROJECTS: a bouquet tied to a post on the launch rock.
+ * A balloon station: a bouquet tied to a post. Used in both directions
+ * between PROJECTS and ACHIEVEMENTS:
+ *   up   — post on the launch rock after PROJECTS, target ACHIEVEMENTS
+ *   down — post on the left edge of ACHIEVEMENTS, target anything below
  *
  *  - Walk up to the post → she grabs the strings (float pose, knot in her fist)
  *  - ↑ / W held   → she rises gradually (eases in and out, never jerks)
@@ -15,10 +18,17 @@ import { BALLOON, BALLOON_RIDE } from '../utils/constants.js';
  * still collide normally — no teleporting.
  */
 export class BalloonRide {
-  constructor(scene, player, { x, y }, target) {
+  /**
+   * @param target  island she rides to (up ride) — or null with opts.isTarget
+   * @param opts    { isTarget(feetY), ceilingIsland, facing (1 right / -1 left), hint }
+   */
+  constructor(scene, player, { x, y }, target, opts = {}) {
     this.scene = scene;
     this.player = player;
-    this.target = target;          // the ACHIEVEMENTS island
+    this.target = target;
+    this.facing = opts.facing ?? 1;
+    // where letting go counts as "arrived" (balloon floats away)
+    this.isTarget = opts.isTarget ?? ((feetY) => Math.abs(feetY - target.surfaceY) < 4);
     this.holding = false;
     this.mustLeave = false;        // after letting go, step away before grabbing again
 
@@ -36,7 +46,7 @@ export class BalloonRide {
 
     // Small sign so the player knows what to do
     this.hint = scene.add
-      .text(x, this.tie.y - 175, '🎈 Grab the balloon', {
+      .text(x, this.tie.y - 175, opts.hint ?? '🎈 Grab the balloon', {
         fontFamily: 'Georgia, serif',
         fontSize: '17px',
         fontStyle: 'bold',
@@ -49,7 +59,7 @@ export class BalloonRide {
     scene.tweens.add({ targets: this.hint, y: this.hint.y - 6, duration: 1500, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
 
     // Highest her feet may go: a little above ACHIEVEMENTS, enough to steer onto it
-    this.ceiling = target.surfaceY - BALLOON_RIDE.ceilingAbove;
+    this.ceiling = (opts.ceilingIsland ?? target).surfaceY - BALLOON_RIDE.ceilingAbove;
 
     // Keep the knot in her fist AFTER physics has moved her sprite this frame
     // (doing it during update would leave the balloon one frame behind)
@@ -91,7 +101,13 @@ export class BalloonRide {
       const near = Math.abs(body.center.x - this.tie.x) < BALLOON_RIDE.grabRange &&
         Math.abs(body.bottom - this.post.y) < 30;
       if (!near) this.mustLeave = false;
-      else if (!this.mustLeave && p.onGround && !this.returning) this.grab();
+      // grabbed only by walking TOWARD the post (not by landing next to it,
+      // and not when walking away from it)
+      else {
+        const dx = this.tie.x - body.center.x;
+        const toward = (input.right && dx > -6) || (input.left && dx < 6);
+        if (!this.mustLeave && p.onGround && !this.returning && toward) this.grab();
+      }
       return this.holding;
     }
 
@@ -109,8 +125,8 @@ export class BalloonRide {
     body.setVelocity(vx, vy);
     if (Math.abs(vx) > 20) p.setFlipX(vx < 0);
 
-    // Rising off the ground counts as airborne; touching down after that lets go
-    if (this.grabY - body.bottom > 8) this.airborne = true;
+    // Leaving the ground (up OR down) counts as airborne; touching down after that lets go
+    if (Math.abs(this.grabY - body.bottom) > 8) this.airborne = true;
     const grounded = body.blocked.down || body.touching.down;
     if (this.airborne && grounded && vy >= 0) {
       this.release();
@@ -130,7 +146,8 @@ export class BalloonRide {
     p.body.setAllowGravity(false);
     p.body.setVelocity(0, 0);
     p.stop();
-    p.setFlipX(false);
+    p.setFlipX(this.facing < 0);
+    p.facing = this.facing;
     p.setTexture('float');
     p.pose = 'float';
     p.setScale(1);   // the float pose texture is pre-scaled to its in-game size
@@ -154,7 +171,7 @@ export class BalloonRide {
 
   release() {
     const p = this.player;
-    const onTarget = Math.abs(p.body.bottom - this.target.surfaceY) < 4;
+    const onTarget = this.isTarget(p.body.bottom);
     this.holding = false;
     this.attached = false;
     this.mustLeave = true;
@@ -169,7 +186,7 @@ export class BalloonRide {
       // Job done: the balloon floats off into the sky; a fresh one appears on the post
       this.scene.tweens.add({
         targets: this.bouquet,
-        x: this.bouquet.x + 120,
+        x: this.bouquet.x + 120 * this.facing,
         y: this.bouquet.y - 600,
         angle: 15,
         alpha: 0,
@@ -183,7 +200,7 @@ export class BalloonRide {
     this.scene.events.emit('balloon-release', onTarget);
   }
 
-  // Drift back to the post (she let go somewhere other than ACHIEVEMENTS)
+  // Drift back to the post (she let go somewhere other than the target)
   returnToPost() {
     this.returning = true;
     this.scene.tweens.add({

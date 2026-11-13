@@ -8,7 +8,8 @@ export class MenuScene extends Phaser.Scene {
 
   // sky.png scaled uniformly to `width`, with its top 40% faded to transparent
   static horizonTexture(scene, width) {
-    const key = 'menu_horizon';
+    width = Math.round(width);
+    const key = `menu_horizon_${Math.round(width)}`;   // one per view width
     if (scene.textures.exists(key)) return key;
     const src = scene.textures.get('sky').getSourceImage();
     // sky.png has a semi-transparent 1–4px fringe on its edges: use the clean interior
@@ -31,6 +32,11 @@ export class MenuScene extends Phaser.Scene {
 
   create() {
     const { width, height } = this.cameras.main;
+
+    // The view follows the window shape — re-lay out the start screen on resize
+    const onResize = () => this.scene.restart();
+    this.scale.once(Phaser.Scale.Events.RESIZE, onResize);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.scale.off(Phaser.Scale.Events.RESIZE, onResize));
 
     // ── Gradient background ──
     const bg = this.add.graphics();

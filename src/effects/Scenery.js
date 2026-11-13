@@ -24,7 +24,6 @@ import { GAME_WIDTH, GAME_HEIGHT, WORLD_HEIGHT } from '../utils/constants.js';
  * scenery is continuous across the whole world.
  */
 
-const MAX_SCROLL_Y = WORLD_HEIGHT - GAME_HEIGHT;   // camera scrollY at the ground row
 const TILE_W = 1024;
 
 // Palette (matches COLORS / the islands' purples and pinks)
@@ -68,10 +67,10 @@ export class Scenery {
       .setDepth(-23.5)
       .setBlendMode(Phaser.BlendModes.ADD);
 
-    // ── Soft light shafts from above ──
-    [[180, 0.07], [620, 0.05], [1060, 0.065]].forEach(([x, a], i) => {
+    // ── Soft light shafts from above (x as a fraction of the view width) ──
+    this.shafts = [[0.14, 0.07], [0.485, 0.05], [0.83, 0.065]].map(([fx, a], i) => {
       const s = scene.add
-        .image(x, -60, 'scn_shaft')
+        .image(fx * GAME_WIDTH, -60, 'scn_shaft')
         .setOrigin(0.5, 0)
         .setRotation(0.32)
         .setScrollFactor(0)
@@ -79,6 +78,7 @@ export class Scenery {
         .setBlendMode(Phaser.BlendModes.ADD)
         .setAlpha(a);
       scene.tweens.add({ targets: s, alpha: a * 0.45, duration: 4200 + i * 900, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+      return { s, fx };
     });
 
     // ── Gentle glow under every island / rock (atmospheric lighting) ──
@@ -124,10 +124,11 @@ export class Scenery {
     }
 
     // ── Vignette ──
-    scene.add.image(0, 0, 'scn_vignette').setOrigin(0, 0).setScrollFactor(0).setDepth(24);
+    this.vignette = scene.add.image(0, 0, 'scn_vignette').setOrigin(0, 0).setScrollFactor(0).setDepth(24);
 
     // ── Foreground ferns & small glowing mushrooms along the screen bottom ──
     const fh = scene.textures.get('scn_fore').getSourceImage().height;
+    this.foreH = fh;
     this.fore = scene.add
       .tileSprite(0, GAME_HEIGHT - fh, GAME_WIDTH, fh, 'scn_fore')
       .setOrigin(0, 0)
@@ -137,12 +138,30 @@ export class Scenery {
     this.update(scene.cameras.main.scrollX, scene.cameras.main.scrollY);
   }
 
+  // Fit the screen-pinned layers to the current view size. The canvas fills
+  // the whole browser window (Scale.EXPAND), so the view can be wider or
+  // taller than 1280×720; layers stay bottom-anchored and full-width.
+  fit(w, h) {
+    if (w === this.viewW && h === this.viewH) return;
+    this.viewW = w;
+    this.viewH = h;
+    this.layers.forEach((l) => l.sprite.setSize(w, l.sprite.height));
+    this.horizon.setDisplaySize(w, 380);
+    this.shafts.forEach(({ s, fx }) => { s.x = fx * w; });
+    this.vignette.setDisplaySize(w, h);
+    this.fore.setSize(w, this.foreH);
+    this.fore.y = h - this.foreH;
+  }
+
   /** Called every frame with the camera scroll. */
   update(scrollX, scrollY) {
-    const climbed = MAX_SCROLL_Y - scrollY;            // 0 at the ground row, grows as she climbs
+    const cam = this.scene.cameras.main;
+    this.fit(cam.width, cam.height);
+    const below = this.viewH - GAME_HEIGHT;            // extra view height below the 720 design
+    const climbed = WORLD_HEIGHT - this.viewH - scrollY; // 0 at the ground row, grows as she climbs
     this.layers.forEach((l) => {
       l.sprite.tilePositionX = scrollX * l.fx;
-      l.sprite.y = l.y0 + climbed * l.fy;               // the forest sinks as she rises above it
+      l.sprite.y = below + l.y0 + climbed * l.fy;      // the forest sinks as she rises above it
     });
     const far = this.layers[0].sprite;
     this.horizon.y = far.y + 110;          // centred just above the far ridgeline

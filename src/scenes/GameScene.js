@@ -82,7 +82,17 @@ export class GameScene extends Phaser.Scene {
     // Last platform she stood on (node or rock) — where a fall respawns her
     this.checkpoint = { x: start.x, y: start.surfaceY };
 
-    this.ride = new BalloonRide(this, this.player, this.launch, this.launch.target);
+    // Balloons both ways between PROJECTS and ACHIEVEMENTS
+    const ach = this.launch.target;
+    this.ride = new BalloonRide(this, this.player, this.launch, ach);                       // up
+    this.rideDown = new BalloonRide(this, this.player,
+      { x: ach.collider.body.left + 30, y: ach.surfaceY }, null, {                            // down
+        facing: -1,
+        hint: '🎈 Ride down',
+        ceilingIsland: ach,
+        isTarget: (feetY) => feetY > ach.surfaceY + 40,   // landed anywhere below ACHIEVEMENTS
+      });
+    this.rides = [this.ride, this.rideDown];
 
     this.physics.add.collider(this.player, this.platforms, (player, zone) => {
       if (!player.body.touching.down || !zone.island) return;
@@ -135,7 +145,11 @@ export class GameScene extends Phaser.Scene {
     const none = { left: false, right: false, jump: false, up: false, down: false };
 
     // Holding the balloon: the ride steers her instead of walking/jumping
-    const riding = this.ride.update(paused ? none : input, delta / 1000);
+    const rideInput = paused ? none : input;
+    const active = this.rides.find((r) => r.holding);
+    const riding = active
+      ? active.update(rideInput, delta / 1000)
+      : this.rides.some((r) => r.update(rideInput, delta / 1000));
     if (riding) {
       this.player.jumpHeld = input.jump;   // no surprise jump when she lets go
     } else if (paused) {
@@ -149,6 +163,12 @@ export class GameScene extends Phaser.Scene {
 
     // Collect any star she's touching
     this.stars.update(this.player.body);
+
+    // Camera smoothing scaled by the real frame time, so following (e.g. a
+    // fall) is equally smooth at any frame rate — Phaser applies the lerp
+    // once per drawn frame, so a fixed value judders when frames are uneven
+    const k = Math.min(delta, 100) / (1000 / 60);
+    cam.setLerp(1 - Math.pow(1 - 0.1, k), 1 - Math.pow(1 - 0.08, k));
 
     // Camera look-ahead eases toward the facing direction
     const target = -this.player.facing * CAMERA_LOOKAHEAD;
@@ -213,7 +233,7 @@ export class GameScene extends Phaser.Scene {
   // One-way like the islands — while rising she passes up through it.
   standOnBridges() {
     const body = this.player?.body;
-    if (!body?.enable || this.ride?.holding) return;
+    if (!body?.enable || this.rides?.some((r) => r.holding)) return;
     const x = body.position.x + body.halfWidth;
     const bridge = this.bridges.find((b) => b.covers(x));
     if (!bridge || body.velocity.y < 0) {
@@ -276,7 +296,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   respawn() {
-    this.ride.cancel();
+    this.rides.forEach((r) => r.cancel());
     // Back on the last platform she stood on (a node or a stepping rock)
     this.player.resetTo(this.checkpoint.x, this.checkpoint.y - 60);
     this.cameras.main.flash(250, 255, 255, 255, false);

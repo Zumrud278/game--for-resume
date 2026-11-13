@@ -16,6 +16,14 @@ export class UIScene extends Phaser.Scene {
 
     this.hud = new HUD(this);
 
+    // Window resized (the view fills the whole browser): re-anchor the HUD
+    const onResize = (gameSize) => {
+      this.hud.layout(gameSize.width, gameSize.height);
+      this.mobileControls?.dpad?.setPosition(110, gameSize.height - 80);
+      this.mobileControls?.jumpBtn?.setPosition(gameSize.width - 90, gameSize.height - 70);
+    };
+    this.scale.on(Phaser.Scale.Events.RESIZE, onResize);
+
     // Touch devices get on-screen controls (read by GameScene.update)
     if (this.sys.game.device.input.touch) {
       this.mobileControls = new MobileControls(this, gameScene.player);
@@ -59,6 +67,7 @@ export class UIScene extends Phaser.Scene {
     this.events.on('explore-resume', () => this.panel.showAll());
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.scale.off(Phaser.Scale.Events.RESIZE, onResize);
       gameScene.events.off('island-changed', onIsland);
       gameScene.events.off('star-collected', onStar);
       gameScene.events.off('balloon-grab', onGrab);

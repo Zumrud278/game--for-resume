@@ -168,8 +168,17 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     }
 
     // ── Pose ── (a jump started this frame counts as airborne immediately)
-    if (!onGround || this.body.velocity.y < 0) {
-      this.setPose(this.body.velocity.y < 0 ? 'jump' : 'fall');
+    const vy = this.body.velocity.y;
+    if (!onGround || vy < 0) {
+      if (this.wasOnGround || this.airSince === undefined) this.airSince = now;
+      const airMs = now - this.airSince;
+      if (vy < 0 || (this.pose === 'jump' && vy < 90)) {
+        this.setPose('jump');                      // rising, plus a brief hang at the top
+      } else if ((this.pose === 'run' || this.pose === 'idle') && airMs < 90 && vy < 160) {
+        // just stepped off something small: don't flash the fall pose
+      } else {
+        this.setPose('fall');
+      }
     } else if (now < this.landUntil && dir === 0) {
       this.setPose('land');
     } else if (dir !== 0 || Math.abs(newVx) > 30) {

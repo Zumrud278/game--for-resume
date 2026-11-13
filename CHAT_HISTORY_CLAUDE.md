@@ -1585,3 +1585,78 @@ I fixed the background so it fits every screen shape, with no seams, hard edges 
 - **Bug fixed during testing:** the backdrop first ended up *behind* the page background, so it was invisible. I fixed the layering so it shows behind the game.
 
 **Files:** `src/effects/AmbientBackdrop.js` (new), `src/main.js` (2 lines to start it), `src/effects/ParallaxBackground.js` (sky gradient), `src/effects/Scenery.js` (horizon glow), and `src/scenes/MenuScene.js` (start-screen sky picture). Nothing is committed.
+
+
+---
+
+## Turn 22 — Falling, a pixel-art Explore button, balloons both ways, full-width layout
+
+*13 November 2026 (continued)*
+
+### 👤 You
+
+> Fix only these issues:
+>
+> 1. **Falling animation:** Make the character fall naturally with realistic gravity and smooth, consistent animations.
+>
+> 2. **Explore Resume button:** Improve the button that appears throughout the journey. Make it clearer, sharper, and higher quality, matching the game's pixel-art style. Do not remove it.
+>
+> 3. **Backward balloon travel:** Allow the character to travel in both directions between Projects and Achievements using balloons. The balloon currently works when travelling from Projects to Achievements, but is missing when travelling backward. Fix this so both directions work correctly, including when returning from the Rainbow section.
+> 4. Fix the game's responsive layout so the game canvas and background properly fill 100% of the browser width. Remove the dark purple side gaps, blurred gradients, and empty margins on both edges. Ensure the canvas and background remain correctly aligned and scale proportionally across different screen sizes without distortion. Preserve all existing game designs and functionality.
+> Preserve the existing design, map, character, nodes, and all other functionality. Do not make unnecessary changes.
+
+<details>
+<summary><b>Work done</b></summary>
+
+- **Falling:**
+  - recorded a fall frame by frame; found on-screen judder (60Hz fixed physics steps vs uneven frames) and abrupt pose switches
+  - physics now runs at `fps: 240` (same gravity, jumps and speeds, smoother on any refresh rate)
+  - camera smoothing is scaled by real frame time
+  - pose hysteresis: a brief hang at the top of a jump, and no fall-pose flash on tiny drops
+  - tried a faster fall camera, **measured it made backward jerks worse**, and removed it
+  - reported honestly: under CPU throttling the headless numbers were noisy, so the 240Hz benefit (high-refresh monitors) is a design reason, not a measured result here
+- **Explore Resume button:** a new pixel-art button drawn on a 104×28 grid at ×2 with nearest-neighbour scaling (outline, bevel, lavender rim, gold studs, pixel star), sharp `resolution: 2` text, and hover and press states. **Bug fixed:** a Container's hit area is centre-based, so at first only the left half was clickable; verified clicks across the whole button at 1280×720 and 2560×1080.
+- **Balloons both ways:**
+  - `BalloonRide` generalised (`facing`, `isTarget`, `ceilingIsland`, `hint`)
+  - a second station on the left edge of ACHIEVEMENTS ("🎈 Ride down"); `GameScene.rides = [up, down]`
+  - **bug fixed:** landing on the down ride wasn't detected (airborne only counted when rising)
+  - **bug fixed:** walking away from the up post after a descent grabbed it; now a balloon is grabbed only when walking *toward* its post
+  - new test suite `ridedown.cjs` (14 checks), including the full return trip from the rainbow island
+- **Full-width layout:**
+  - `Scale.EXPAND`: the canvas fills 100% of the window, scaled proportionally; the view extends to the window's shape
+  - removed the blurred backdrop and frame glow
+  - sky, glow, forest, foreground, light shafts and vignette follow the real view size, bottom-anchored
+  - HUD and menu re-lay out on resize
+  - verified at 1280×720, 1920×1080, 2560×1080, 1440×900, 1024×768, 390×844 and 1536×730 (canvas = window, equal x/y scale, scene pixels in the edge columns)
+- **Checked:** all 8 suites passed (168 checks); build passes.
+
+</details>
+
+### 🤖 Claude
+
+All four issues are fixed, and the rest of the game is unchanged. All 8 test suites pass (168 checks, including a new one for the two-way balloon), and the build passes.
+
+**1. Falling animation**
+- **What I found:** physics ran in fixed 60-per-second steps, so on frames that arrived unevenly (and on 120/144Hz screens) she moved in uneven jumps. The pose also switched abruptly to "falling" the instant she left the ground.
+- **The fixes:**
+  - Physics now takes 240 small steps per second. Gravity, jump height and speeds are identical, but movement is spread evenly across every frame.
+  - The camera's smoothing now adapts to the real frame time.
+  - There's a brief, natural hang at the top of each jump, and no "fall" flash when she steps off something tiny.
+- **Kept honest:** I also tried a faster camera during falls, measured that it made the picture jerk more, and removed it.
+
+**2. Explore Resume button**
+- **Redrawn as crisp pixel art:** a dark outline, a bevelled purple body with a lit top and shaded bottom, a lavender rim, gold corner studs, a pixel star icon, and sharp text. It has hover and press states.
+- **Bug fixed:** at first only the left half of the new button was clickable. I fixed that and tested clicks across the whole button at two screen sizes.
+
+**3. Balloons both ways**
+- **Down station:** a second balloon now waits on the left edge of ACHIEVEMENTS ("🎈 Ride down"). Walk into it, hold **↓** and steer with **← →**, and land on the launch rock or PROJECTS. That balloon then floats off and a fresh one reappears on its post.
+- **From the rainbow:** walk back to ACHIEVEMENTS and ride down the same way.
+- **Grabbing:** she grabs a balloon only by walking *toward* its post, never by landing next to one or walking away from it.
+- **Unchanged:** the up balloon works as before.
+
+**4. Full-width layout**
+- **Fills the window:** the game now fills 100% of the browser window at any size, scaled evenly with no stretching. On wider or taller windows you simply see more of the world.
+- **Removed:** the blurred side areas and the frame glow.
+- **Follows the window:** the sky, forest, glow, foreground plants and vignette always fit the screen, and the HUD and start screen adjust when the window is resized.
+
+**Files:** `gameConfig.js`, `Player.js`, `GameScene.js`, `BalloonRide.js`, `HUD.js`, `UIScene.js`, `ParallaxBackground.js`, `Scenery.js`, `MenuScene.js`, `main.js`, and the deleted `AmbientBackdrop.js`. Nothing is committed.

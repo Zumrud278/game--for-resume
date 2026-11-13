@@ -1,8 +1,56 @@
+import Phaser from 'phaser';
 import { FONT_FAMILY, ISLANDS, DESTINATION } from '../utils/constants.js';
 
 const CONTROLS_TEXT = '←  →  or  A  D   Move        ↑  /  W  /  Space   Jump';
 
 const MARGIN = 20;
+
+// Explore Resume button: drawn as pixel art on a small grid (1 art pixel =
+// BTN.px screen pixels) with nearest-neighbour scaling → crisp edges
+const BTN = { px: 2, gw: 104, gh: 28 };
+BTN.w = BTN.gw * BTN.px;
+BTN.h = BTN.gh * BTN.px;
+
+function makeButtonTextures(scene) {
+  const variants = {
+    btn_explore: { body: '#6b3fa0', top: '#9a6fd0', bottom: '#47286f' },
+    btn_explore_hover: { body: '#7d4fb8', top: '#b48be6', bottom: '#56318a' },
+    btn_explore_down: { body: '#5a3389', top: '#6b3fa0', bottom: '#3c2160' },
+  };
+  Object.entries(variants).forEach(([key, c]) => {
+    if (scene.textures.exists(key)) return;
+    const { gw: W, gh: H } = BTN;
+    const tex = scene.textures.createCanvas(key, W, H);
+    const ctx = tex.getContext();
+    const rect = (x, y, w, h, col) => { ctx.fillStyle = col; ctx.fillRect(x, y, w, h); };
+    const px = (x, y, col) => rect(x, y, 1, 1, col);
+    // outline with chamfered (pixel-rounded) corners
+    rect(2, 0, W - 4, H, '#1b0f33'); rect(0, 2, W, H - 4, '#1b0f33'); rect(1, 1, W - 2, H - 2, '#1b0f33');
+    // body with bevel: lit top, shaded bottom
+    rect(2, 2, W - 4, H - 4, c.body);
+    rect(3, 2, W - 6, 3, c.top);
+    rect(3, H - 6, W - 6, 3, c.bottom);
+    // lavender inner rim
+    rect(3, 1, W - 6, 1, '#c9a0dc'); rect(1, 3, 1, H - 6, '#c9a0dc');
+    rect(W - 2, 3, 1, H - 6, '#9a6fd0'); rect(3, H - 2, W - 6, 1, '#9a6fd0');
+    // gold corner studs
+    [[3, 3], [W - 5, 3], [3, H - 5], [W - 5, H - 5]].forEach(([x, y]) => { rect(x, y, 2, 2, '#ffd34d'); px(x, y, '#fff2b0'); });
+    // pixel star icon (with outline + highlight)
+    const sx = 9, sy = 8;
+    const star = [
+      '....#....', '....#....', '...###...', '#########', '.#######.', '..#####..', '..##.##..', '.##...##.', '##.....##',
+    ];
+    star.forEach((row, y) => [...row].forEach((ch, x) => {
+      if (ch === '#') px(sx + x, sy + y + 1, '#8a5a12');   // drop shadow
+    }));
+    star.forEach((row, y) => [...row].forEach((ch, x) => {
+      if (ch === '#') px(sx + x, sy + y, y < 4 ? '#ffe680' : '#ffd34d');
+    }));
+    px(sx + 4, sy + 2, '#ffffff'); px(sx + 3, sy + 3, '#fff6c8');
+    tex.refresh();
+    tex.setFilter(Phaser.Textures.FilterMode.NEAREST);
+  });
+}
 
 /**
  * Screen-fixed overlay:
@@ -19,6 +67,14 @@ export class HUD {
     this.createStarCounter();
     this.createExploreButton(width);
     this.createInstructions(width, height);
+    this.layout(width, height);
+  }
+
+  // Keep the right / bottom anchored elements in place at any view size
+  layout(width, height) {
+    this.exploreButton.setPosition(width - MARGIN - BTN.w, MARGIN);
+    this.instructions.setPosition(width / 2, height - MARGIN - 4);
+    this.drawInstructionsBg();
   }
 
   // ── Upper-left: level badge ──
@@ -107,22 +163,34 @@ export class HUD {
     }
   }
 
-  // ── Upper-right: Explore Resume button ──
+  // ── Upper-right: Explore Resume button (crisp pixel art) ──
   createExploreButton(width) {
-    const btn = this.scene.add
-      .image(width - MARGIN, MARGIN, 'explore_resume')
-      .setOrigin(1, 0)
-      .setScale(0.95)
-      .setDepth(150)
-      .setInteractive({ useHandCursor: true });
+    makeButtonTextures(this.scene);
+    const face = this.scene.add.image(0, 0, 'btn_explore').setOrigin(0, 0).setScale(BTN.px);
+    const label = this.scene.add
+      .text(BTN.w / 2 + 12, BTN.h / 2 - 2, 'Explore Resume', {
+        fontFamily: FONT_FAMILY,
+        fontSize: '16px',
+        fontStyle: 'bold',
+        color: '#FFFFFF',
+        resolution: 2,                                   // extra-sharp text
+        shadow: { offsetX: 0, offsetY: 2, color: '#2a1846', blur: 0, fill: true },
+      })
+      .setOrigin(0.5, 0.5);
+    const btn = this.scene.add.container(width - MARGIN - BTN.w, MARGIN, [face, label]).setDepth(150);
+    btn.setSize(BTN.w, BTN.h);
+    // (a Container's hit area is measured from its centre, hence the w/2, h/2 offset)
+    btn.setInteractive(new Phaser.Geom.Rectangle(BTN.w / 2, BTN.h / 2, BTN.w, BTN.h), Phaser.Geom.Rectangle.Contains);
+    btn.input.cursor = 'pointer';
 
-    btn.on('pointerover', () => btn.setScale(1.0));
-    btn.on('pointerout', () => btn.setScale(0.95));
+    const state = (key, dy) => { face.setTexture(key); face.y = dy; label.y = BTN.h / 2 - 2 + dy; };
+    btn.on('pointerover', () => state('btn_explore_hover', -1));
+    btn.on('pointerout', () => state('btn_explore', 0));
     btn.on('pointerdown', () => {
-      btn.setScale(0.9);
+      state('btn_explore_down', 2);
       this.scene.events.emit('explore-resume');
     });
-    btn.on('pointerup', () => btn.setScale(1.0));
+    btn.on('pointerup', () => state('btn_explore_hover', -1));
 
     this.exploreButton = btn;
   }

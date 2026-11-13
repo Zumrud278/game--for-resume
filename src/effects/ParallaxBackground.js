@@ -11,6 +11,11 @@ import {
  * Full-screen purple fantasy sky with small stars and clouds.
  * Layers move slower than the world (scrollFactor < 1) for depth.
  */
+// Widest / tallest view the background is laid out for (the view follows the
+// window shape; see Scale.EXPAND in gameConfig)
+const MAX_VIEW_W = 2600;
+const MAX_VIEW_H = 1300;
+
 export class ParallaxBackground {
   constructor(scene) {
     this.scene = scene;
@@ -21,20 +26,22 @@ export class ParallaxBackground {
     // One smooth curve through the same three colours (no seam where two
     // linear gradients used to meet), drawn once into a texture
     ParallaxBackground.skyTexture(scene);
-    scene.add.image(0, 0, 'sky_gradient').setOrigin(0, 0).setDisplaySize(GAME_WIDTH, GAME_HEIGHT)
+    this.sky = scene.add.image(0, 0, 'sky_gradient').setOrigin(0, 0)
       .setScrollFactor(0).setDepth(-30);
 
     // ── High-altitude glow: a warm rose-gold sky that fades in as the
     //    camera climbs toward the rainbow island ──
     this.highSky = scene.add.graphics().setScrollFactor(0).setDepth(-29).setAlpha(0);
-    this.highSky.fillGradientStyle(0x2A1460, 0x2A1460, 0xFFB3D1, 0xFFC98A, 1);
-    this.highSky.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-    this.maxScrollY = WORLD_HEIGHT - GAME_HEIGHT;
+    this.viewW = 0;
+    this.viewH = 0;
+    this.fit(scene.cameras.main.width, scene.cameras.main.height);
 
-    // Visible span of a layer = screen + how far that layer scrolls
+    // Visible span of a layer = largest possible view + how far that layer
+    // scrolls, so stars & clouds cover the screen on any window shape
+    const VW = Math.max(GAME_WIDTH, MAX_VIEW_W), VH = Math.max(GAME_HEIGHT, MAX_VIEW_H);
     const span = (factor) => ({
-      w: GAME_WIDTH + (WORLD_WIDTH - GAME_WIDTH) * factor,
-      h: GAME_HEIGHT + (WORLD_HEIGHT - GAME_HEIGHT) * factor,
+      w: VW + (WORLD_WIDTH - VW) * factor,
+      h: VH + (WORLD_HEIGHT - VH) * factor,
     });
 
     // ── Tiny dot stars (far layer) ──
@@ -130,7 +137,22 @@ export class ParallaxBackground {
 
   // Layers scroll by themselves (scrollFactor); only the altitude glow
   // needs updating: 0 near the islands, up to 0.7 at the very top.
+  // Size the screen-pinned sky layers to the current view (the canvas fills
+  // the whole browser window, so the view can be wider or taller than 16:9)
+  fit(w, h) {
+    if (w === this.viewW && h === this.viewH) return;
+    this.viewW = w;
+    this.viewH = h;
+    this.sky.setDisplaySize(w, h);
+    this.highSky.clear();
+    this.highSky.fillGradientStyle(0x2A1460, 0x2A1460, 0xFFB3D1, 0xFFC98A, 1);
+    this.highSky.fillRect(0, 0, w, h);
+    this.maxScrollY = WORLD_HEIGHT - h;
+  }
+
   update(scrollX, scrollY) {
+    const cam = this.scene.cameras.main;
+    this.fit(cam.width, cam.height);
     const altitude = 1 - scrollY / this.maxScrollY;
     this.highSky.setAlpha(Phaser.Math.Clamp((altitude - 0.3) / 0.6, 0, 1) * 0.7);
   }
