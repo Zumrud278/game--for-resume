@@ -1718,3 +1718,35 @@ All three are done; nothing else changed.
 **3. Education:** about 14% smaller, so its whole node, including the bottom tip, is visible above the controls bar. Its position is the same, and the bridges simply reach a little further to meet it.
 
 All 9 test suites pass (178 checks). Nothing is committed.
+
+
+---
+
+## Turn 24 — The rainbow stays a walking continuation after Achievements
+
+### 👤 You
+
+> The rainbow must remain a natural continuation of the adventure route AFTER the Achievement level. The girl must NOT use balloons to reach the rainbow. Once she completes the Achievement section, she should continue travelling naturally toward the rainbow using the existing path, bridges, and jumping mechanics. Keep the rainbow connected to the level progression. Do not move it to a separate or disconnected area.
+
+<details>
+<summary><b>Work done</b></summary>
+
+- **Checked the code; no change was needed:**
+  - `GameScene.buildRoute()` connects `[...islands, rainbow island]` in order, so the rainbow is simply the next node after ACHIEVEMENTS.
+  - `constants.js`: the rainbow is `X5 = X4 + 120 + GAP(900) + 136`, one `STEP` (360px) above ACHIEVEMENTS, the same spacing as the other levels.
+  - The crossing is bridge → rock → 200px jump → rock → bridge, with 13 stars.
+  - No balloon is used anywhere after ACHIEVEMENTS. The old `BalloonJourney.js` is gone, and the only balloon on ACHIEVEMENTS is the optional "Ride down" back to PROJECTS.
+- **Tests:** `rainbow.cjs` passed 13/13 locally (GitHub-Pages-style server) and on the live site. She walks and jumps there with real key presses, never holds a balloon, collects stars, the camera follows, and the ending works.
+- **Live site:** serves the new `constants.js` (contains `X5`), and `BalloonJourney.js` returns 404 there. Git is in sync with origin/main.
+
+</details>
+
+### 🤖 Claude
+
+The game already works this way, so I didn't change anything.
+
+- **Connected:** the rainbow island is the next node after ACHIEVEMENTS, the same distance and one step higher, like the other levels.
+- **Walking route:** she gets there over the usual bridge → stepping rock → jump → stepping rock → bridge, collecting stars on the way.
+- **No balloons:** nothing flies her to the rainbow. The only balloon on ACHIEVEMENTS is the optional "Ride down" back to PROJECTS.
+
+I tested it locally and on your live GitHub Pages site: 13/13 checks passed, with her walking and jumping all the way. If you still see the old balloon flight, your browser has an old copy; press **Ctrl+F5** to reload.
