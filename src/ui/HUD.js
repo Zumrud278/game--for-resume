@@ -103,7 +103,9 @@ export class HUD {
       this.scene.tweens.add({ targets: g, alpha: 0, duration: 300, onComplete: () => g.setVisible(false) });
       return;
     }
-    this.guideText.setText(`✦  Follow the stars ${mode === 'up' ? '↑' : '↓'}  ✦`);
+    this.guideText.setText(mode === 'up'
+      ? '✦  Follow the stars ↑  ·  land on ACHIEVEMENTS  ✦'
+      : '✦  Follow the stars ↓  ✦');
     const w = this.guideText.width + 44;
     const h = 40;
     this.guideBg.clear();
@@ -272,7 +274,7 @@ export class HUD {
   }
 
   // Small temporary message under the top bar
-  toast(message) {
+  toast(message, ms = 1600) {
     const { width } = this.scene.scale.gameSize;
     this.currentToast?.destroy();
     const t = this.scene.add
@@ -286,6 +288,6 @@ export class HUD {
       .setOrigin(1, 0)
       .setDepth(160);
     this.currentToast = t;
-    this.scene.tweens.add({ targets: t, alpha: 0, delay: 1600, duration: 400, onComplete: () => t.destroy() });
+    this.scene.tweens.add({ targets: t, alpha: 0, delay: ms, duration: 400, onComplete: () => t.destroy() });
   }
 }

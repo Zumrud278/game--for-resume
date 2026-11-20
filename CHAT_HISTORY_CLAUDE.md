@@ -2493,3 +2493,48 @@ Both also show in the Explore Resume panel. All tests pass. Remember to commit t
 - **Explore Resume:** still opens the big panel, since that's the whole resume.
 
 All tests pass.
+
+
+---
+
+## Turn 43 — New Projects symbol, info again on return, "land on Achievements" hints
+
+### 👤 You
+
+> chnage the symbol of the projetcs and when the charcter moves back to the node again it does not display adny inof display it
+> 3. put some hint that when she moveswith the ballon she must  sit in the cahievemt node not other
+
+<details>
+<summary><b>Work done</b></summary>
+
+- **1. Projects symbol:**
+  - new pixel-art icon `assets/objects/projects-chip.png`, matching the Logic Gates project: a purple circuit chip with gold pins and a glowing gold AND gate in the middle (32×32 art, saved at 128×128 so it stays sharp)
+  - used on the PROJECTS island sign and in the Projects card (`BootScene.js`, `InfoPanel.js`)
+  - the old `projects.png` is kept
+- **2. Info shows again when she comes back (`GameScene.js`):**
+  - the card only opened when she arrived at a *different* node, so returning to the same node showed nothing
+  - now, once she has gone well away from the node she last stood on (about 140px past its edge, or 300px above or below it), landing on it again shows its information again (`trackLeftNode` and a `leftNode` flag)
+  - just walking around on the node doesn't reopen it
+- **3. Hints to land on ACHIEVEMENTS with the balloon:**
+  - **"Land here" sign:** while she rides the balloon up, a bobbing "⬇ Land here ⬇" sign with a soft gold ring floats over the ACHIEVEMENTS island (`createLandHereMarker`). It goes away when she lets go.
+  - **Messages while riding:** the controls bar reads "🎈 ↑ Rise ← → Drift ↓ Descend — land on ACHIEVEMENTS", and the top hint reads "✦ Follow the stars ↑ · land on ACHIEVEMENTS ✦".
+  - **Landing elsewhere:** if she lets go anywhere else, a message says "🎈 Grab the balloon again and land on the ACHIEVEMENTS island" for about 3 seconds.
+  - The balloon events now say which ride they are ('up' or 'down', `BalloonRide` `name`), so the ride down isn't affected. `HUD.toast` takes an optional duration.
+- **Tests:**
+  - new suite `revisit` passes 11/11:
+    - new icon on the sign and card
+    - info shows again on return, but not while walking around on the node
+    - "Land here" sign, bar text and hint text while riding
+    - message when landing elsewhere; no message when landing on ACHIEVEMENTS
+  - all 13 other suites pass
+
+</details>
+
+### 🤖 Claude
+
+**Done:**
+1. **Projects symbol:** a new pixel-art icon of a circuit chip with a glowing logic gate, to match your Logic Gates project. It's on the Projects sign and in its info card.
+2. **Info when she comes back:** if she walks away from a node and comes back, its information shows again. Just walking around on the node doesn't keep reopening it.
+3. **Balloon hints:** while she rides the balloon up, a bobbing "⬇ Land here ⬇" sign floats over Achievements, and both the top hint and the controls bar say "land on ACHIEVEMENTS". If she lets go anywhere else, a message tells her to grab the balloon again and land on the Achievements island.
+
+All tests pass.

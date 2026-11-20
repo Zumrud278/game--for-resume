@@ -4,7 +4,7 @@ import { RESUME } from '../data/resume.js';
 const ICON_SRC = {
   education: 'assets/objects/education.png',
   skills: 'assets/objects/skills.png',
-  projects: 'assets/objects/projects.png',
+  projects: 'assets/objects/projects-chip.png',
   certificate: 'assets/objects/certificate.png',
   trophy: 'assets/objects/trophy.png',
   star: 'assets/effects/star.png',

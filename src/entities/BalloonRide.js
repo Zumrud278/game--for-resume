@@ -29,6 +29,7 @@ export class BalloonRide {
     this.player = player;
     this.target = target;
     this.facing = opts.facing ?? 1;
+    this.name = opts.name ?? 'ride';      // 'up' / 'down' — sent with the grab / release events
     // where letting go counts as "arrived" (balloon floats away)
     this.isTarget = opts.isTarget ?? ((feetY) => Math.abs(feetY - target.surfaceY) < 4);
     this.holding = false;
@@ -172,7 +173,7 @@ export class BalloonRide {
       ease: 'Sine.easeOut',
       onComplete: () => { this.attached = true; },
     });
-    this.scene.events.emit('balloon-grab');
+    this.scene.events.emit('balloon-grab', this.name);
   }
 
   release() {
@@ -208,7 +209,7 @@ export class BalloonRide {
     } else {
       this.returnToPost();
     }
-    this.scene.events.emit('balloon-release', onTarget);
+    this.scene.events.emit('balloon-release', onTarget, this.name, false);
   }
 
   // Drift back to the post (she let go somewhere other than the target)
@@ -305,7 +306,7 @@ export class BalloonRide {
     this.scene.tweens.killTweensOf(this.bouquet);
     this.returning = false;
     this.resetToPost();
-    this.scene.events.emit('balloon-release', false);
+    this.scene.events.emit('balloon-release', false, this.name, true);   // cancelled (respawn / restart)
   }
 }
 

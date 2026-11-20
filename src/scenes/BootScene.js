@@ -121,7 +121,7 @@ export class BootScene extends Phaser.Scene {
     this.load.image('balloons', 'assets/objects/balloons.png');
     this.load.image('certificate', 'assets/objects/certificate.png');
     this.load.image('education', 'assets/objects/education.png');
-    this.load.image('projects', 'assets/objects/projects.png');
+    this.load.image('projects', 'assets/objects/projects-chip.png');   // Projects symbol: a circuit chip with a logic gate
     this.load.image('skills', 'assets/objects/skills.png');
     this.load.image('trophy', 'assets/objects/trophy.png');
 

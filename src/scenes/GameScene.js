@@ -81,21 +81,24 @@ export class GameScene extends Phaser.Scene {
     const start = ISLANDS[0];
     this.player = new Player(this, start.x - 40, start.surfaceY);
     this.currentIsland = 0;
+    this.leftNode = false;      // has she gone away from currentIsland since landing on it?
     // Last platform she stood on (node or rock) — where a fall respawns her
     this.checkpoint = { x: start.x, y: start.surfaceY };
 
     // Balloons both ways between PROJECTS and ACHIEVEMENTS
     const ach = this.launch.target;
-    this.ride = new BalloonRide(this, this.player, this.launch, ach);                       // up
+    this.ride = new BalloonRide(this, this.player, this.launch, ach, { name: 'up' });       // up
     this.rideDown = new BalloonRide(this, this.player,
       { x: ach.collider.body.left + 30, y: ach.surfaceY }, null, {                            // down
+        name: 'down',
         facing: -1,
         hint: '🎈 Ride down',
         waitForArrival: true,     // empty until she arrives and puts her own bouquet down here
         ceilingIsland: ach,
         isTarget: (feetY) => feetY > ach.surfaceY + 40,   // landed anywhere below ACHIEVEMENTS
       });
-    this.ride.handoffTo = this.rideDown;   // landing on ACHIEVEMENTS: she sets her bouquet on its post
+    this.ride.handoffTo = this.rideDown;
+    this.createLandHereMarker(ach);   // landing on ACHIEVEMENTS: she sets her bouquet on its post
     this.rides = [this.ride, this.rideDown];
 
     // "Follow the stars" guide between SKILLS and ACHIEVEMENTS (both ways)
@@ -109,7 +112,9 @@ export class GameScene extends Phaser.Scene {
       this.checkpoint = { x: zone.island.x, y: zone.island.surfaceY };
       if (zone.island.index >= 0) {
         this.lastNode = zone.island.index;
-        this.setCurrentIsland(zone.island.index);
+        if (zone.island.index !== this.currentIsland) this.setCurrentIsland(zone.island.index);
+        else if (this.leftNode) this.events.emit('island-changed', zone.island.index);   // back again: show its info again
+        this.leftNode = false;
       }
       if (zone.island.index === DESTINATION_INDEX) this.arrive();
     });
@@ -177,6 +182,7 @@ export class GameScene extends Phaser.Scene {
 
     this.updateGuide(input, paused);
     this.closeCardWhenAway();
+    this.trackLeftNode();
     this.guideCoins.update(time);
 
     // On the rainbow island she stays lively while standing still
@@ -281,6 +287,39 @@ export class GameScene extends Phaser.Scene {
   isPanelOpen() {
     const ui = this.scene.get('UI');
     return !!(ui?.panel?.blocksGame || ui?.ending?.isOpen);
+  }
+
+  // Once she has gone well away from the node she last stood on, coming back
+  // to it shows its information again
+  trackLeftNode() {
+    if (this.leftNode) return;
+    const isl = this.islands[this.currentIsland];
+    if (!isl) return;
+    const b = this.player.body;
+    if (Math.abs(b.center.x - isl.x) > isl.width / 2 + 140 || Math.abs(b.bottom - isl.surfaceY) > 300) this.leftNode = true;
+  }
+
+  /**
+   * While she rides the balloon up, a bobbing "Land here" sign floats over the
+   * ACHIEVEMENTS island — that's where she has to set down.
+   */
+  createLandHereMarker(ach) {
+    const y = ach.surfaceY - 120;
+    const label = this.add.text(0, 0, '⬇  Land here  ⬇', {
+      fontFamily: 'Georgia, serif', fontSize: '18px', fontStyle: 'bold', color: '#FFE37A',
+      backgroundColor: 'rgba(45,27,78,0.88)', padding: { x: 14, y: 7 },
+    }).setOrigin(0.5);
+    const ring = this.add.ellipse(0, 120, ach.collider.body.width * 0.8, 22, 0xffd700, 0.18).setStrokeStyle(2, 0xffd700, 0.8);
+    this.landHere = this.add.container(ach.x, y, [ring, label]).setDepth(12).setVisible(false).setAlpha(0);
+    this.tweens.add({ targets: label, y: -8, duration: 650, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    this.tweens.add({ targets: ring, alpha: 0.35, scaleX: 1.06, duration: 650, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    const show = (on) => {
+      this.tweens.killTweensOf(this.landHere);
+      if (on) this.landHere.setVisible(true);
+      this.tweens.add({ targets: this.landHere, alpha: on ? 1 : 0, duration: 250, onComplete: () => { if (!on) this.landHere.setVisible(false); } });
+    };
+    this.events.on('balloon-grab', (name) => { if (name === 'up') show(true); });
+    this.events.on('balloon-release', (onTarget, name) => { if (name === 'up') show(false); });
   }
 
   // The small node card closes by itself once she has walked away from its node

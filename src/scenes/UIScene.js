@@ -49,8 +49,16 @@ export class UIScene extends Phaser.Scene {
     gameScene.events.on('star-collected', onStar);
 
     // Balloon ride: show its controls while she's holding the balloon
-    const onGrab = () => this.hud.setInstructions('🎈  ↑ Rise      ← → Drift      ↓ Descend      (land to let go)');
-    const onLetGo = () => this.hud.setInstructions();
+    // Riding up: she has to set down on the ACHIEVEMENTS island
+    const onGrab = (name) => this.hud.setInstructions(name === 'up'
+      ? '🎈  ↑ Rise      ← → Drift      ↓ Descend      —  land on ACHIEVEMENTS'
+      : '🎈  ↑ Rise      ← → Drift      ↓ Descend      (land to let go)');
+    const onLetGo = (onTarget, name, cancelled) => {
+      this.hud.setInstructions();
+      if (name === 'up' && !onTarget && !cancelled) {
+        this.hud.toast('🎈 Grab the balloon again and land on the ACHIEVEMENTS island', 3200);
+      }
+    };
     gameScene.events.on('balloon-grab', onGrab);
     gameScene.events.on('balloon-release', onLetGo);
 
