@@ -46,7 +46,7 @@ export class InfoPanel {
         </header>
         <div class="rp-body"></div>
         <footer class="rp-footer">
-          <span class="rp-hint">Press Esc to close</span>
+          <span class="rp-hint">Press Enter or Esc to close</span>
           <button type="button" class="rp-continue">Continue ✦</button>
         </footer>
       </div>`;
@@ -67,8 +67,13 @@ export class InfoPanel {
     this.root.addEventListener('pointerdown', (e) => {
       if (e.target === this.root) this.close();
     });
+    // Enter or Esc closes it (a key still held from before doesn't count)
     this.onKey = (e) => {
-      if (this.isOpen && e.key === 'Escape') this.close();
+      if (!this.isOpen || e.repeat) return;
+      if (e.key === 'Escape' || e.key === 'Enter') {
+        e.preventDefault();          // no extra click on the focused button
+        this.close();
+      }
     };
     window.addEventListener('keydown', this.onKey);
   }

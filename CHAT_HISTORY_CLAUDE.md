@@ -2345,3 +2345,33 @@ It no longer shows while she's walking from Skills. The "↓" hint on the way ba
   - hovering makes it grow slightly and glow brighter, and clicking gives it a little press before the game starts
 
 Everything else is unchanged, and all tests pass.
+
+
+---
+
+## Turn 39 — Enter closes the information panel
+
+### 👤 You
+
+> When the information opens in each node press enter to close make it
+
+<details>
+<summary><b>Work done</b></summary>
+
+- **`src/ui/InfoPanel.js`:**
+  - the panel that opens on each node, and the Explore Resume panel, now close with **Enter** (including the number-pad Enter) as well as Esc
+  - a held-down key (auto-repeat) doesn't close a panel the instant it opens
+  - the hint at the bottom of the panel now says "Press Enter or Esc to close"
+  - the Continue button, the ✕ button and clicking outside the panel work as before
+- **Tests:**
+  - new suite `enterclose` passes 9/9:
+    - Enter closes the panel on EDUCATION and SKILLS, and she can walk again straight away
+    - Enter closes Explore Resume, and Esc still works
+    - a repeating Enter doesn't close it
+  - the existing panels suite passes 27/27
+
+</details>
+
+### 🤖 Claude
+
+**Done:** when a node's information opens, pressing **Enter** closes it and she can carry on straight away. Esc and the Continue button still work too. The hint at the bottom of the panel now says "Press Enter or Esc to close", and the Explore Resume panel closes with Enter as well. All tests pass.
