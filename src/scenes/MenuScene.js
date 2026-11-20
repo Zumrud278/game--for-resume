@@ -159,14 +159,15 @@ export class MenuScene extends Phaser.Scene {
 
     // her start-screen frames are pre-drawn at 0.75 of the art = 1:1 at P = 2
     const charScale = P / 2;
-    const charTex = this.textures.get('idle_menu').getSourceImage();
+    const charTex = this.textures.get('girl_menu').getSourceImage();
     const charH = charTex.height * charScale;
+    const LAYOUT_CHAR_H = 152 * charScale;     // reference height the layout is built around (keeps everything in place)
 
     const islandKey = makeCentreIsland(this);
     const islandTex = this.textures.get(islandKey).getSourceImage();
     const islandInfo = this.textures.get(islandKey).customData.island;
 
-    const grassY = Math.round(Math.max(height * 0.57, emY + emH / 2 + height * 0.05 + charH));
+    const grassY = Math.round(Math.max(height * 0.57, emY + emH / 2 + height * 0.05 + LAYOUT_CHAR_H));
     const islandTop = grassY - islandInfo.grassY * P;
 
     // ── Title emblem (no box behind it — just a soft gold glow) ──
@@ -236,10 +237,12 @@ export class MenuScene extends Phaser.Scene {
   }
 
   /**
-   * The girl on the start screen: standing still on the grass (no blinking,
-   * no movement). Her frame is pre-drawn at its start-screen size, so she stays crisp.
+   * The girl on the start screen (assets/characters/start-girl.png): standing
+   * still on the grass in the middle of the island — her boots are centred in
+   * the picture and its bottom edge is the soles of her boots. Pre-drawn at its
+   * start-screen size (BootScene), so she stays crisp.
    */
   createGirl(x, feetY, scale) {
-    return this.add.image(x, feetY, 'idle_menu').setOrigin(0.5, 201 / 203).setScale(scale);
+    return this.add.image(x, feetY, 'girl_menu').setOrigin(0.5, 1).setScale(scale);
   }
 }

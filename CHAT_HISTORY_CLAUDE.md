@@ -2235,3 +2235,40 @@ Everything else is unchanged, and all tests pass.
 **Blinking:** removed. She now stands completely still.
 
 Nothing else changed, and all tests pass.
+
+
+---
+
+## Turn 36 — Your new character picture on the start screen
+
+### 👤 You
+
+> *(attached a new picture of the character: the girl with long curly brown hair, purple bow with a gold star, purple star cape, white blouse, brown bag, purple skirt, brown boots — hands visible)*
+>
+> use this pictur for the start page adjust her to the page and make her appropriate to the page and node
+
+<details>
+<summary><b>Work done</b></summary>
+
+- **Picture prepared** (new file `assets/characters/start-girl.png`, 409×480):
+  - the upload's transparent background had a faint haze of nearly invisible pixels (alpha < 24) and a stray dot; both removed
+  - cropped to her, and padded so her boots sit in the middle of the picture (the cape flows out to the left), so she stands centred on the island
+  - the bottom edge is the soles of her boots
+  - downsized from 1312×1199 to 480px tall (high-quality resample) to keep the game light
+- **Loaded and sized (`BootScene.js`):** loaded as `start_girl` and pre-drawn once at her start-screen height (`START_GIRL_HEIGHT = 162` px at 720p) as `girl_menu`, so she stays crisp. The old "painted hands" copy is gone: this picture has her hands.
+- **Placed (`MenuScene.js`):** she stands in the middle of the centre island with her boots on the grass (the soles sink about 2px into the grass), completely still, with no blinking or reactions.
+  - Her head clears the title (28px gap).
+  - The island, title, side islands, moon, castle and the original Start button are all unchanged; the layout keeps its old reference height, so nothing moves.
+- **Unchanged:** the in-game character (`idle.png` and the other poses).
+- **Tests:**
+  - start-screen suite passes 9/9: new picture used at about 162px, feet on the grass, never moves, Start works
+  - layout check passes 31/31
+  - game suites pass
+
+</details>
+
+### 🤖 Claude
+
+**Done:** your new picture is now the girl on the start screen. I tidied it first: removed the faint background haze and a stray dot, then trimmed and centred her on her boots. She stands in the middle of the centre island with her boots on the grass. Her size fits the island and leaves room under the title.
+
+Everything else on the page is unchanged, and the character inside the game still uses her game poses. All tests pass. Nothing is committed yet; the new picture file needs to be committed and pushed for it to appear on GitHub Pages.

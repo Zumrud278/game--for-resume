@@ -11,31 +11,8 @@ const CHARACTER_KEYS = ['idle', 'jump', 'fall', 'land', 'celebrate', 'float', 'r
  * then a soft closed-lid curve is drawn, like her closed eyes in other poses.
  * Coordinates are in the original idle.png (139×203).
  */
-// The standing pose (idle.png) has both arms tucked behind the cape, so her
-// hands don't show. For the start screen, a copy with two small hands painted
-// in her own skin tones and outline colour: one under the near sleeve's cuff
-// (by her bag), one peeking out of the cape beside her skirt. idle.png itself
-// is unchanged.
-function makeIdleWithHands(scene) {
-  const src = scene.textures.get('idle').getSourceImage();
-  const c = document.createElement('canvas');
-  c.width = src.width;
-  c.height = src.height;
-  const ctx = c.getContext('2d');
-  ctx.drawImage(src, 0, 0);
-  const PAL = { o: 'rgb(74,36,44)', L: 'rgb(250,212,184)', m: 'rgb(246,186,158)', s: 'rgb(226,150,130)' };
-  const NEAR = ['.ooooo.', 'oLLLLmo', 'oLLLmmo', 'omLmmso', '.ommsso', '..oooo.'];
-  const FAR = ['.ooo.', 'oLLmo', 'oLmmo', 'oLmso', 'ommso', '.ooo.'];
-  const put = (rows, x0, y0) => rows.forEach((row, j) => [...row].forEach((ch, i) => {
-    if (!PAL[ch]) return;
-    ctx.fillStyle = PAL[ch];
-    ctx.fillRect(x0 + i, y0 + j, 1, 1);
-  }));
-  put(NEAR, 70, 113);
-  put(FAR, 104, 121);
-  if (scene.textures.exists('idle_hands')) scene.textures.remove('idle_hands');
-  scene.textures.addCanvas('idle_hands', c);
-}
+// Height of the girl on the start screen (px at the 720p view; she stands on the centre island)
+export const START_GIRL_HEIGHT = 162;
 
 function makeBlinkTexture(scene) {
   const src = scene.textures.get('idle').getSourceImage();
@@ -124,6 +101,7 @@ export class BootScene extends Phaser.Scene {
 
     // ── Characters ──
     this.load.image('idle', 'assets/characters/idle.png');
+    this.load.image('start_girl', 'assets/characters/start-girl.png');   // start-screen portrait
     // Individual run frames (run.png is 433px wide, which doesn't split evenly)
     this.load.image('run_1', 'assets/characters/frames/run_1.png');
     this.load.image('run_2', 'assets/characters/frames/run_2.png');
@@ -180,13 +158,13 @@ export class BootScene extends Phaser.Scene {
 
     // Character: every pose drawn once at its exact in-game size, so she's
     // rendered 1:1 — her eyes and fine details stay stable while she moves
-    // start-screen copies (their own size); on the start screen she shows her hands
-    if (!this.missing.includes('idle')) {
-      makeIdleWithHands(this);
-      prescaleTexture(this, 'idle_hands', 0.75, 'idle_menu');
-      this.textures.remove('idle_hands');
+    // Start-screen girl: her own picture (start-girl.png — feet at the bottom,
+    // boots centred), drawn once at her start-screen height so she stays crisp
+    if (!this.missing.includes('start_girl')) {
+      const h = this.textures.get('start_girl').getSourceImage().height;
+      prescaleTexture(this, 'start_girl', START_GIRL_HEIGHT / h, 'girl_menu');
     } else {
-      prescaleTexture(this, 'idle', 0.75, 'idle_menu');
+      prescaleTexture(this, 'idle', 0.75, 'girl_menu');
     }
     // Blink frame (eyes closed) for her idle life on the rainbow island
     if (!this.missing.includes('idle')) {
