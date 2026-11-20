@@ -1774,3 +1774,25 @@ I tested it locally and on your live GitHub Pages site: 13/13 checks passed, wit
 ### 🤖 Claude
 
 I made the Skills node about 14% smaller. Its whole bottom tip now shows above the controls bar, the same way Education does. It uses the same island art and style and sits in the same place; the bridges just reach a little further to meet it. All 9 test suites passed (178 checks). Nothing is committed.
+
+
+---
+
+## Turn 26 — Keep the game separate from the website
+
+### 👤 You
+
+> Your editor had switched to your Zumrud278.github.io website folder, but the game isn't in it. I made the change in the game project, game--for-resume.
+> keep game for resume seperate do not incldue in the github.io...
+
+<details>
+<summary><b>Work done</b></summary>
+
+- Checked the `Zumrud278.github.io` repo: `git status` is clean, so nothing from the game was ever added there.
+- Saved a memory note: the game stays only in `game--for-resume` and is never copied into the website repo.
+
+</details>
+
+### 🤖 Claude
+
+Understood. The game stays only in `game--for-resume`. Your website folder is untouched (`git status` is clean), and I'll never add game files to it, even when your editor has the website open.
