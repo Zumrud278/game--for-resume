@@ -2421,3 +2421,31 @@ Everything else is unchanged, and all tests pass.
 - **Achievements:** a new item, **Challenge Winner – YONCA AI-Based Daily Farm Planner, Data-Free Prototype** (İnnovasiyalar Mərkəzi · ASAN AI Hub · DigiRella — 8 April 2026, Baku), shows your certificate photo. Click it to see it full size. The "Add certificates here" placeholder is gone.
 
 Both also show in the Explore Resume panel. All tests pass. Remember to commit the new certificate picture too.
+
+
+---
+
+## Turn 41 — Certificate right after the YONCA text, no extra words
+
+### 👤 You
+
+> in achievemt prat after this words put the picture of certificate YONCA – AI-Based Daily Farm Planner
+>
+> My teammate and I built an AI-based daily farm planner for farmers, created for the Yonca app. no need other words
+
+<details>
+<summary><b>Work done</b></summary>
+
+- **`src/data/resume.js`:**
+  - the certificate picture is now part of the YONCA entry itself, shown right after "My teammate and I built an AI-based daily farm planner for farmers, created for the Yonca app."
+  - removed the separate "Challenge Winner …" entry and its organisers/date line
+  - the Achievements panel now has just the YONCA title, its sentence and the certificate picture (still clickable to open full size)
+- **Tests:**
+  - media suite passes 8/8 (one YONCA entry; order is title, text, picture; no extra words)
+  - panels suite passes 27/27
+
+</details>
+
+### 🤖 Claude
+
+**Done:** the Achievements panel now shows just "YONCA – AI-Based Daily Farm Planner", the sentence "My teammate and I built an AI-based daily farm planner for farmers, created for the Yonca app.", and your certificate picture right under it. The extra "Challenge Winner" entry and its words are gone. All tests pass.

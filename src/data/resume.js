@@ -74,11 +74,7 @@ export const RESUME = {
         {
           title: 'YONCA – AI-Based Daily Farm Planner',
           text: '**My teammate and I built an AI-based daily farm planner for farmers, created for the Yonca app.**',
-        },
-        {
-          title: 'Challenge Winner – YONCA AI-Based Daily Farm Planner, Data-Free Prototype',
-          text: 'İnnovasiyalar Mərkəzi · ASAN AI Hub · DigiRella — 8 April 2026, Baku',
-          image: { src: 'assets/objects/yonca-certificate.jpg', alt: 'YONCA Challenge Winner certificate, 8 April 2026, Baku' },
+          image: { src: 'assets/objects/yonca-certificate.jpg', alt: 'YONCA certificate' },
         },
       ],
     },
