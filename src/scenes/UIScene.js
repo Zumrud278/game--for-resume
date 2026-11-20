@@ -54,6 +54,11 @@ export class UIScene extends Phaser.Scene {
     gameScene.events.on('balloon-grab', onGrab);
     gameScene.events.on('balloon-release', onLetGo);
 
+    // "Follow the stars" hint between SKILLS and ACHIEVEMENTS
+    const onGuide = (mode) => this.hud.setGuide(mode);
+    gameScene.events.on('guide', onGuide);
+    if (gameScene.guide) this.hud.setGuide(gameScene.guide);
+
     // Balloon journey: controls are paused, so say what's happening
     const onJourneyStart = () => this.hud.setInstructions('✦  The balloons are carrying you to the Rainbow…  ✦');
     const onJourneyEnd = () => {
@@ -72,6 +77,7 @@ export class UIScene extends Phaser.Scene {
       gameScene.events.off('star-collected', onStar);
       gameScene.events.off('balloon-grab', onGrab);
       gameScene.events.off('balloon-release', onLetGo);
+      gameScene.events.off('guide', onGuide);
       gameScene.events.off('journey-start', onJourneyStart);
       gameScene.events.off('journey-complete', onJourneyEnd);
       this.panel.destroy();

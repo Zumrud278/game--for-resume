@@ -1851,3 +1851,53 @@ Understood. The game stays only in `game--for-resume`. Your website folder is un
 **One change to know about:** coming back from the rainbow, she needs to stop on Achievements for a moment so the balloons can appear. If she just keeps walking, she'll walk off the edge.
 
 All tests pass: the new balloon suite 9/9, and the other 9 suites with 178 checks. Nothing is committed.
+
+
+---
+
+## Turn 28 — She puts her balloons down at Achievements; "Follow the stars" guides
+
+### 👤 You
+
+> When she sits at Achievements, make her place the balloons beside her naturally, as if she is putting them down. The balloons she was holding should disappear from her hands, while a separate set stays waiting at the Achievements node. Do not make the balloons suddenly appear out of nowhere.
+>
+> Show "Follow the stars ↑" when moving from Skills to Achievements and "Follow the stars ↓" when moving back from Achievements to Projects, with glowing star coins guiding the way. Hide the hints when she reaches each destination.
+
+<details>
+<summary><b>Work done</b></summary>
+
+- **Putting the balloons down (`src/entities/BalloonRide.js`):**
+  - new `placeInto(station)`: when she lands on ACHIEVEMENTS with the up balloon, she turns toward the ride-down post and bends down (her land/crouch pose, 0.48s)
+  - the bouquet leaves her hand and glides in a gentle arc onto the post (0.6–1.3s, depending on distance)
+  - `receive()` then ties it there as the waiting ride-down set: same picture, same spot (handoff gap 0.02px), and its "Ride down" sign fades in
+  - her hands are empty; the up station quietly gets a fresh bouquet on its own post far below, out of view
+  - the ride-down post starts empty and is empty again after she rides it down (she took those balloons with her)
+  - the previous turn's "appear after standing still" fade-in was removed, so nothing pops in
+- **"Follow the stars" guide:**
+  - `GameScene.updateGuide()` shows ↑ while she heads from SKILLS toward ACHIEVEMENTS (including the whole balloon ride up), and hides it when she lands on ACHIEVEMENTS
+  - it shows ↓ while she heads from ACHIEVEMENTS back toward PROJECTS (including the ride down), and hides it on PROJECTS
+  - it also hides if she turns back
+- **Guide coins (new `src/effects/GuideCoins.js`):**
+  - 21 small glowing star coins: low along the walkway from SKILLS to the balloon post, then up the balloon route between the collectible stars
+  - a wave of light runs along them in the direction to go
+  - on the way down only the 10 coins on that part light up
+  - they're guides only, not collectible, and they fade in and out with the hint
+- **HUD (`src/ui/HUD.js`, `UIScene.js`):** a gold-edged, softly glowing "✦ Follow the stars ↑ ✦" pill at the top centre. On narrow screens it sits below the badges.
+- **Tests:**
+  - new suite `place` passes 18/18:
+    - smooth hand-to-post glide with no pop-in, never in two places
+    - hints and coins in both directions, hidden at each destination
+  - all 9 older suites pass (178 checks)
+
+</details>
+
+### 🤖 Claude
+
+**Putting the balloons down:** when she lands on Achievements, she turns toward the post and bends down. Her balloons float from her hand onto the post beside her and stay tied there, ready for the ride down, with the "Ride down" sign fading in. Her hands are now empty. It's the same bouquet, moved from her hand to the post, so nothing appears out of nowhere.
+
+**Follow the stars:**
+- **Going up:** "✦ Follow the stars ↑ ✦" appears at the top of the screen as she heads from Skills toward Achievements, including the balloon ride. It disappears when she reaches Achievements.
+- **Going down:** "✦ Follow the stars ↓ ✦" appears as she heads back from Achievements to Projects. It disappears at Projects.
+- **Guide coins:** small glowing star coins light the path, with a wave of light running in the direction to go. They show only while a hint is up and can't be collected.
+
+All tests pass: the new suite 18/18, and the other 9 suites with 178 checks. Nothing is committed.

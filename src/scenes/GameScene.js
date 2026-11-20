@@ -12,6 +12,7 @@ import { Bridge } from '../entities/Bridge.js';
 import { Stars } from '../entities/Stars.js';
 import { BalloonRide } from '../entities/BalloonRide.js';
 import { IdleLife } from '../entities/IdleLife.js';
+import { GuideCoins } from '../effects/GuideCoins.js';
 import { ParallaxBackground } from '../effects/ParallaxBackground.js';
 import { RainbowDestination } from '../effects/RainbowDestination.js';
 import { Scenery } from '../effects/Scenery.js';
@@ -90,17 +91,26 @@ export class GameScene extends Phaser.Scene {
       { x: ach.collider.body.left + 30, y: ach.surfaceY }, null, {                            // down
         facing: -1,
         hint: '🎈 Ride down',
-        waitForArrival: true,     // appears only once she has landed on ACHIEVEMENTS and settled
+        waitForArrival: true,     // empty until she arrives and puts her own bouquet down here
         ceilingIsland: ach,
         isTarget: (feetY) => feetY > ach.surfaceY + 40,   // landed anywhere below ACHIEVEMENTS
       });
+    this.ride.handoffTo = this.rideDown;   // landing on ACHIEVEMENTS: she sets her bouquet on its post
     this.rides = [this.ride, this.rideDown];
-    this.achSettle = 0;           // ms she has stood still on ACHIEVEMENTS
+
+    // "Follow the stars" guide between SKILLS and ACHIEVEMENTS (both ways)
+    this.guideCoins = new GuideCoins(this, this.guidePoints(skyTrail));
+    this.guide = null;          // 'up' | 'down' | null
+    this.heading = 0;           // last direction she was steered (1 right, -1 left)
+    this.lastNode = 0;          // index of the last node she stood on
 
     this.physics.add.collider(this.player, this.platforms, (player, zone) => {
       if (!player.body.touching.down || !zone.island) return;
       this.checkpoint = { x: zone.island.x, y: zone.island.surfaceY };
-      if (zone.island.index >= 0) this.setCurrentIsland(zone.island.index);
+      if (zone.island.index >= 0) {
+        this.lastNode = zone.island.index;
+        this.setCurrentIsland(zone.island.index);
+      }
       if (zone.island.index === DESTINATION_INDEX) this.arrive();
     });
 
@@ -165,7 +175,8 @@ export class GameScene extends Phaser.Scene {
       this.player.update(input);
     }
 
-    this.updateWaitingBalloons(delta, input, paused, riding);
+    this.updateGuide(input, paused);
+    this.guideCoins.update(time);
 
     // On the rainbow island she stays lively while standing still
     this.idleLife.update(time, delta, rideInput, riding);
@@ -282,29 +293,69 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
-  // She walked onto the rainbow island: light the landing platform, then the
-  // ending (quote + contact card) plays — once per playthrough
   /**
-   * The ride-down balloons wait on ACHIEVEMENTS only after she has got there:
-   * once she has landed and stood still for a moment they float down onto
-   * their post; when she leaves the island they're put away again.
+   * Where the guide coins sit: low along the walkway from SKILLS to the
+   * balloon post, then up through the sky along the balloon ride (between
+   * the collectible stars). `both` marks the part she also takes coming back.
    */
-  updateWaitingBalloons(delta, input, paused, riding) {
-    const ach = this.launch.target;
-    const b = this.player.body;
-    const onAch = !riding && this.player.onGround &&
-      Math.abs(b.bottom - ach.surfaceY) < 3 &&
-      b.center.x > ach.collider.body.left - 6 && b.center.x < ach.collider.body.right + 6;
-    if (!onAch) {
-      this.achSettle = 0;
-      if (!riding) this.rideDown.stow();
-      return;
+  guidePoints(skyTrail) {
+    const skills = this.islands[2];
+    const projects = this.islands[3];
+    const L = this.launch;
+    const platforms = [...this.islands, ...this.rocks].map((i) => i.collider.body);
+    const groundY = (x) => {
+      const br = this.bridges.find((b) => b.covers(x));
+      if (br) return br.yAt(x);
+      const pl = platforms.find((b) => x > b.left + 8 && x < b.right - 8);
+      return pl ? pl.top : null;
+    };
+    const pts = [];
+    for (let x = skills.collider.body.right + 30; x < L.x - 30; x += 85) {
+      const y = groundY(x);
+      if (y !== null) pts.push({ x, y: y - 24, both: x > projects.collider.body.right });
     }
-    const still = !paused && !input.left && !input.right && !input.jump && Math.abs(b.velocity.x) < 5;
-    this.achSettle = still ? this.achSettle + delta : 0;
-    if (this.achSettle >= 450) this.rideDown.appear();
+    const n = skyTrail.length;
+    for (let k = 0; k <= n; k++) {
+      const t = (k + 0.5) / (n + 1);
+      pts.push({
+        x: Phaser.Math.Linear(L.x + 40, L.target.collider.body.left - 30, t),
+        y: Phaser.Math.Linear(L.y - 140, L.target.surfaceY - 90, t) - Math.sin(Math.PI * t) * 60,
+        both: true,
+      });
+    }
+    return pts;
   }
 
+  /**
+   * "Follow the stars ↑" while she heads from SKILLS up to ACHIEVEMENTS,
+   * "Follow the stars ↓" while she heads from ACHIEVEMENTS back to PROJECTS.
+   * Each hides when she reaches that destination (or turns back).
+   */
+  updateGuide(input, paused) {
+    if (!paused) {
+      if (input.right && !input.left) this.heading = 1;
+      else if (input.left && !input.right) this.heading = -1;
+    }
+    const b = this.player.body;
+    const x = b.center.x;
+    const ach = this.launch.target;
+    const belowAch = b.bottom > ach.surfaceY + 40;
+
+    let g = null;
+    if (this.rideDown.holding) g = 'down';
+    else if (this.ride.holding) g = 'up';
+    else if ((this.lastNode === 2 || this.lastNode === 3) && this.heading > 0 && x > this.islands[2].x && belowAch) g = 'up';
+    else if (this.lastNode === 4 && this.heading < 0 && x < ach.x && (this.guide === 'down' || b.velocity.x < -20)) g = 'down';
+
+    if (g !== this.guide) {
+      this.guide = g;
+      this.guideCoins.show(g);
+      this.events.emit('guide', g);
+    }
+  }
+
+  // She walked onto the rainbow island: light the landing platform, then the
+  // ending (quote + contact card) plays — once per playthrough
   arrive() {
     if (this.arrived) return;
     this.arrived = true;

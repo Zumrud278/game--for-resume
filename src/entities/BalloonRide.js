@@ -21,8 +21,8 @@ export class BalloonRide {
   /**
    * @param target  island she rides to (up ride) — or null with opts.isTarget
    * @param opts    { isTarget(feetY), ceilingIsland, facing (1 right / -1 left), hint,
-   *                  waitForArrival — hidden until appear() is called (she has
-   *                  arrived on its island and settled); stow() hides it again }
+   *                  waitForArrival — starts empty: its bouquet is the one she
+   *                  carries up and puts down beside her (see placeInto) }
    */
   constructor(scene, player, { x, y }, target, opts = {}) {
     this.scene = scene;
@@ -34,7 +34,7 @@ export class BalloonRide {
     this.holding = false;
     this.mustLeave = false;        // after letting go, step away before grabbing again
     this.gated = !!opts.waitForArrival;
-    this.ready = !this.gated;      // a gated station is hidden until appear()
+    this.ready = !this.gated;      // a gated station is empty until she puts a bouquet on it
 
     // Post on the launch rock, with the bouquet tied to its top
     this.post = scene.add.image(x, y + 6, 'bridge_post').setOrigin(0.5, 1).setDepth(3);
@@ -188,8 +188,12 @@ export class BalloonRide {
     p.pose = null;
     p.setPose('idle');
 
-    if (onTarget) {
+    if (onTarget && this.handoffTo) {
+      // Arrived: she puts the balloons down beside her, on the waiting post
+      this.placeInto(this.handoffTo);
+    } else if (onTarget) {
       this.leaving = true;
+      if (this.gated) this.ready = false;   // she took this station's balloons away with her
       // Job done: the balloon floats off into the sky; a fresh one appears on the post
       this.scene.tweens.add({
         targets: this.bouquet,
@@ -228,7 +232,7 @@ export class BalloonRide {
   resetToPost(fade = false) {
     this.leaving = false;
     this.bouquet.setPosition(this.tie.x, this.tie.y).setAngle(0);
-    if (!this.ready) {             // gated and she's not here: stay hidden until appear()
+    if (!this.ready) {             // gated and empty: stays hidden until she brings a bouquet
       this.bouquet.setVisible(false).setAlpha(1);
       this.hint.setVisible(false);
       this.idleSway();
@@ -240,33 +244,53 @@ export class BalloonRide {
     this.idleSway();
   }
 
-  /** Gated station: she has arrived and settled — the waiting bouquet floats down onto its post. */
-  appear() {
-    if (this.ready) return;
-    this.ready = true;
-    if (this.holding || this.leaving || this.returning) return;   // resetToPost will show it
+  /**
+   * She has landed: crouching down, she sets the bouquet from her hand onto
+   * `station`'s post (a short, gentle arc). It then simply stays there as that
+   * station's waiting balloons — no new set pops into view. This station gets
+   * a fresh bouquet back on its own post (out of view, far below).
+   */
+  placeInto(station) {
+    const p = this.player;
+    const to = station.tie;
+    p.facing = to.x < p.x ? -1 : 1;
+    p.setFlipX(p.facing < 0);
+    p.playReaction('land', 480);                 // bends down to set them down
+    this.leaving = true;
     this.scene.tweens.killTweensOf(this.bouquet);
-    this.bouquet.setPosition(this.tie.x, this.tie.y - 60).setAngle(0).setAlpha(0).setVisible(true);
-    this.scene.tweens.add({
-      targets: this.bouquet,
-      y: this.tie.y,
-      alpha: 1,
-      duration: 800,
-      ease: 'Sine.easeOut',
-      onComplete: () => this.idleSway(),
+    const from = { x: this.bouquet.x, y: this.bouquet.y, a: this.bouquet.angle };
+    const dist = Phaser.Math.Distance.Between(from.x, from.y, to.x, to.y);
+    this.scene.tweens.addCounter({
+      from: 0,
+      to: 1,
+      duration: Phaser.Math.Clamp(500 + dist * 1.4, 600, 1300),
+      ease: 'Sine.easeInOut',
+      onUpdate: (tw) => {
+        const t = tw.getValue();
+        this.bouquet.setPosition(
+          Phaser.Math.Linear(from.x, to.x, t),
+          Phaser.Math.Linear(from.y, to.y, t) - Math.sin(Math.PI * t) * 16,
+        );
+        this.bouquet.setAngle(Phaser.Math.Linear(from.a, 0, t) - Math.sin(Math.PI * t) * 6 * p.facing);
+      },
+      onComplete: () => {
+        station.receive();                       // the same bouquet, now tied to the post
+        this.resetToPost(true);                  // this one goes back to its own post
+      },
     });
-    this.hint.setAlpha(0).setVisible(true);
-    this.scene.tweens.add({ targets: this.hint, alpha: 1, duration: 500, delay: 400 });
   }
 
-  /** Gated station: she has left its island — hide the waiting bouquet again. */
-  stow() {
-    if (!this.gated || !this.ready || this.holding) return;
-    this.ready = false;
-    if (this.leaving || this.returning) return;   // its tween ends in resetToPost, which hides it
+  /** A bouquet she carried here has been tied to this post: it waits for the ride down. */
+  receive() {
+    this.ready = true;
+    this.leaving = false;
+    this.returning = false;
+    this.mustLeave = false;
     this.scene.tweens.killTweensOf(this.bouquet);
-    this.bouquet.setVisible(false);
-    this.hint.setVisible(false);
+    this.bouquet.setPosition(this.tie.x, this.tie.y).setAngle(0).setAlpha(1).setVisible(true);
+    this.idleSway();
+    this.hint.setAlpha(0).setVisible(true);
+    this.scene.tweens.add({ targets: this.hint, alpha: 1, duration: 500 });
   }
 
   // Respawn / restart: drop the balloon without any animation

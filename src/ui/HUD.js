@@ -67,6 +67,7 @@ export class HUD {
     this.createStarCounter();
     this.createExploreButton(width);
     this.createInstructions(width, height);
+    this.createGuide();
     this.layout(width, height);
   }
 
@@ -75,6 +76,46 @@ export class HUD {
     this.exploreButton.setPosition(width - MARGIN - BTN.w, MARGIN);
     this.instructions.setPosition(width / 2, height - MARGIN - 4);
     this.drawInstructionsBg();
+    // Top centre; on narrow screens below the badges so nothing overlaps
+    this.guide.setPosition(width / 2, width < 820 ? MARGIN + 128 : MARGIN + 24);
+  }
+
+  // ── Top centre: "Follow the stars ↑ / ↓" ──
+  createGuide() {
+    this.guideText = this.scene.add.text(0, 1, '', {
+      fontFamily: FONT_FAMILY,
+      fontSize: '18px',
+      fontStyle: 'bold',
+      color: '#FFE37A',
+    }).setOrigin(0.5);
+    this.guideBg = this.scene.add.graphics();
+    this.guideGlow = this.scene.add.graphics();
+    this.guide = this.scene.add.container(0, 0, [this.guideGlow, this.guideBg, this.guideText])
+      .setDepth(150).setAlpha(0).setVisible(false);
+    this.scene.tweens.add({ targets: this.guideGlow, alpha: { from: 0.35, to: 1 }, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+  }
+
+  /** 'up' | 'down' | null */
+  setGuide(mode) {
+    const g = this.guide;
+    this.scene.tweens.killTweensOf(g);
+    if (!mode) {
+      this.scene.tweens.add({ targets: g, alpha: 0, duration: 300, onComplete: () => g.setVisible(false) });
+      return;
+    }
+    this.guideText.setText(`✦  Follow the stars ${mode === 'up' ? '↑' : '↓'}  ✦`);
+    const w = this.guideText.width + 44;
+    const h = 40;
+    this.guideBg.clear();
+    this.guideBg.fillStyle(0x2D1B4E, 0.85);
+    this.guideBg.fillRoundedRect(-w / 2, -h / 2, w, h, h / 2);
+    this.guideBg.lineStyle(2, 0xFFD700, 1);
+    this.guideBg.strokeRoundedRect(-w / 2, -h / 2, w, h, h / 2);
+    this.guideGlow.clear();
+    this.guideGlow.lineStyle(6, 0xFFD700, 0.25);
+    this.guideGlow.strokeRoundedRect(-w / 2 - 3, -h / 2 - 3, w + 6, h + 6, h / 2 + 3);
+    g.setVisible(true);
+    this.scene.tweens.add({ targets: g, alpha: 1, duration: 350 });
   }
 
   // ── Upper-left: level badge ──
