@@ -321,15 +321,17 @@ export class GameScene extends Phaser.Scene {
         x: Phaser.Math.Linear(L.x + 40, L.target.collider.body.left - 30, t),
         y: Phaser.Math.Linear(L.y - 140, L.target.surfaceY - 90, t) - Math.sin(Math.PI * t) * 60,
         both: true,
+        sky: true,
       });
     }
     return pts;
   }
 
   /**
-   * "Follow the stars ↑" while she heads from SKILLS up to ACHIEVEMENTS,
-   * "Follow the stars ↓" while she heads from ACHIEVEMENTS back to PROJECTS.
-   * Each hides when she reaches that destination (or turns back).
+   * "Follow the stars ↑" appears the moment she grabs the balloon at PROJECTS
+   * and stays while she rides it up; it hides when she lands on ACHIEVEMENTS.
+   * "Follow the stars ↓" shows while she heads from ACHIEVEMENTS back down to
+   * PROJECTS (including the ride down); it hides when she reaches PROJECTS.
    */
   updateGuide(input, paused) {
     if (!paused) {
@@ -339,12 +341,10 @@ export class GameScene extends Phaser.Scene {
     const b = this.player.body;
     const x = b.center.x;
     const ach = this.launch.target;
-    const belowAch = b.bottom > ach.surfaceY + 40;
 
     let g = null;
     if (this.rideDown.holding) g = 'down';
     else if (this.ride.holding) g = 'up';
-    else if ((this.lastNode === 2 || this.lastNode === 3) && this.heading > 0 && x > this.islands[2].x && belowAch) g = 'up';
     else if (this.lastNode === 4 && this.heading < 0 && x < ach.x && (this.guide === 'down' || b.velocity.x < -20)) g = 'down';
 
     if (g !== this.guide) {

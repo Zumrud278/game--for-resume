@@ -115,7 +115,10 @@ export class HUD {
     this.guideGlow.lineStyle(6, 0xFFD700, 0.25);
     this.guideGlow.strokeRoundedRect(-w / 2 - 3, -h / 2 - 3, w + 6, h + 6, h / 2 + 3);
     g.setVisible(true);
-    this.scene.tweens.add({ targets: g, alpha: 1, duration: 350 });
+    // pops in with a little bounce so it catches the eye
+    g.setScale(0.6);
+    this.scene.tweens.add({ targets: g, alpha: 1, duration: 250 });
+    this.scene.tweens.add({ targets: g, scale: 1, duration: 420, ease: 'Back.easeOut' });
   }
 
   // ── Upper-left: level badge ──

@@ -2272,3 +2272,35 @@ Nothing else changed, and all tests pass.
 **Done:** your new picture is now the girl on the start screen. I tidied it first: removed the faint background haze and a stray dot, then trimmed and centred her on her boots. She stands in the middle of the centre island with her boots on the grass. Her size fits the island and leaves room under the title.
 
 Everything else on the page is unchanged, and the character inside the game still uses her game poses. All tests pass. Nothing is committed yet; the new picture file needs to be committed and pushed for it to appear on GitHub Pages.
+
+
+---
+
+## Turn 37 — "Follow the stars ↑" appears when she grabs the balloon
+
+### 👤 You
+
+> the word-follow the starts must apperar when she graps ballon to move from project to ahcievemt
+
+<details>
+<summary><b>Work done</b></summary>
+
+- **Checked first:** the hint was already on screen during the ride (locally and on the live site). But it appeared much earlier, as soon as she walked right past SKILLS, so by the time she grabbed the balloon it had been showing for a while and was easy to miss.
+- **`GameScene.updateGuide()`:**
+  - "Follow the stars ↑" now appears exactly when she grabs the balloon at PROJECTS
+  - it stays while she rides up, and hides when she lands on ACHIEVEMENTS (or lets go anywhere else)
+  - it no longer shows while she walks from SKILLS
+  - "Follow the stars ↓" for the way back down is unchanged
+- **`HUD.setGuide()`:** the hint pops in with a little bounce (scale 0.6 → 1, Back.easeOut) so it catches the eye.
+- **`GuideCoins`:** for the ride up, only the glowing coins along the balloon route through the sky light up (new `sky` flag on those points). The way down is unchanged.
+- **Tests:**
+  - the balloon/guide suite passes 19/19, including a new check that the hint's first frame is exactly the frame she grabs the balloon, with nothing shown before
+  - ride, ride-down and movement suites pass
+
+</details>
+
+### 🤖 Claude
+
+**Done:** "Follow the stars ↑" now appears the moment she grabs the balloon at Projects. It pops in at the top of the screen with a little bounce, the glowing star coins light up along the balloon's path through the sky, and it all disappears when she lands on Achievements.
+
+It no longer shows while she's walking from Skills. The "↓" hint on the way back down is unchanged, and all tests pass.

@@ -10,7 +10,11 @@ const GLOW_SIZE = 64;
  * direction she should go: up the route, or back down it.
  */
 export class GuideCoins {
-  /** @param points  [{ x, y, both }] in route order; `both` = also on the way back down */
+  /**
+   * @param points  [{ x, y, both, sky }] in route order
+   *                `sky`  = on the balloon route (lit for the ride up)
+   *                `both` = also on the way back down
+   */
   constructor(scene, points) {
     this.scene = scene;
     if (!scene.textures.exists('guide_glow')) makeGlowTexture(scene);
@@ -20,7 +24,7 @@ export class GuideCoins {
         .setBlendMode(Phaser.BlendModes.ADD).setDepth(5).setAlpha(0).setVisible(false);
       const coin = scene.add.image(pt.x, pt.y, 'star')
         .setScale(COIN_SCALE).setTint(0xffe27a).setDepth(5).setAlpha(0).setVisible(false);
-      return { glow, coin, i, both: pt.both, on: false };
+      return { glow, coin, i, both: pt.both, sky: pt.sky, on: false };
     });
     this.fade = { v: 0 };
     this.dir = 1;
@@ -31,7 +35,7 @@ export class GuideCoins {
     if (mode) {
       this.dir = mode === 'up' ? 1 : -1;
       this.coins.forEach((c) => {
-        c.on = mode === 'up' || c.both;
+        c.on = mode === 'up' ? !!c.sky : c.both;
         c.glow.setVisible(c.on);
         c.coin.setVisible(c.on);
       });
