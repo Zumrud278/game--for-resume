@@ -1901,3 +1901,122 @@ All tests pass: the new balloon suite 9/9, and the other 9 suites with 178 check
 - **Guide coins:** small glowing star coins light the path, with a wave of light running in the direction to go. They show only while a hint is up and can't be collected.
 
 All tests pass: the new suite 18/18, and the other 9 suites with 178 checks. Nothing is committed.
+
+
+---
+
+## Turn 29 — Start screen redesign: "Emerald World" (first version)
+
+### 👤 You
+
+> Redesign the start/title screen to use a centered, layered fantasy RPG composition while keeping only a single "Start" button, incorporating rich emerald accents across the title crest, island details, and subtle lighting.
+>
+> Layout & Visual Structure:
+> 1. Top Center (Title Crest): Add a prominent, ornate gold-trimmed fantasy title logo reading "Emerald World" in the upper third of the screen against the starry purple twilight sky, framed with decorative filigree, small faceted emerald gemstone accents, and subtle glowing star and emerald-light sparkles.
+> 2. Center Foreground (Grounded Character): Instead of having the character sprite floating in mid-air, place a lush, grassy pixel-art floating island with hanging vines, wildflowers, and glowing emerald crystals (alongside soft pastel accents) in the center foreground, casting a gentle emerald glow onto the grass and character sprite. Position the character sprite standing firmly on top of this center island.
+> 3. Midground Framing: Add two smaller mossy floating cliff islands with small emerald-toned moss patches and mineral glints framing the far left and far right edges to create depth, keeping the distant floating castle on the bottom right and the crescent moon on the left visible.
+> 4. Bottom Center (Single Start Button): Keep only the single ornate purple-and-gold "Start" button positioned cleanly over the rocky underside/lower portion of the center floating island. Enhance it with subtle emerald gem or inner-glow accents while matching the crisp pixel-art aesthetic of the character and foreground island, with a subtle hover glow/scale animation and existing click handler preserved.
+>
+> Technical Notes:
+> - Ensure responsive scaling so the title crest, center island, character sprite, and Start button stay vertically aligned and well-spaced across 16:9 desktop viewports without overlapping.
+> - Use `image-rendering: pixelated` for pixel-art elements so sprites and pixel borders stay sharp.
+
+<details>
+<summary><b>Work done</b></summary>
+
+- New `src/effects/pixelArt.js`: pixel-by-pixel generators drawn at low resolution and shown at a whole-number scale with NEAREST filtering:
+  - a one-line "Emerald World" crest on a purple banner
+  - faceted emerald gems, emerald crystal clusters
+  - the centre island: the START island art plus vines, wildflowers and crystals
+  - mossy side cliffs
+- `src/scenes/MenuScene.js` rewritten around that layout:
+  - the character stands on the island's grass (no more floating)
+  - emerald glows and sparkles
+  - the Start button sits over the rocky underside, with hover scale and glow; the click handler is unchanged
+- **Found:** in 16:9 windows the game canvas is always 1280×720 and the browser scales it up. So `image-rendering: pixelated` is set on the canvas while the start screen is showing, and reset when the game starts.
+- This version was replaced mid-work by Turn 30's more detailed brief.
+
+</details>
+
+### 🤖 Claude
+
+(Superseded mid-work by the next message; the final result is described under Turn 30.)
+
+---
+
+## Turn 30 — Start screen: detailed pixel-art "Emerald / World" layout, one Start button
+
+### 👤 You
+
+> add previous chat to chat claude too and
+>
+> Redesign the start/title screen into a 16:9 pixel-art fantasy RPG layout with the title "Emerald World" and ONLY ONE button ("Start" — do NOT include Load Game, Continue, or Settings buttons). Do not use plain CSS boxes, simple borders, or geometric triangles/pebble grids; generate or render detailed pixel-art assets (`image-rendering: pixelated`) so every element matches the crisp pixel-art style of the character sprite and floating island.
+>
+> Exact Layout & Composition:
+> 1. Background & Sky:
+>    - Deep purple-to-lavender twilight sky gradient with twinkling stars, a few small clouds, a white crescent moon on the left-center sky, misty purple mountains/clouds along the bottom horizon, and a soft, distant floating castle in the lower-right clouds.
+>
+> 2. Top-Center Title Emblem ("Emerald World"):
+>    - Centered in the upper third of the screen with no dark rectangular box behind it.
+>    - Two-line bold gold serif pixel-art lettering with dark outlines and subtle gold glow: "Emerald" on top and "World" below (or stacked cleanly inside the crest), surrounded by small four-point star sparkles.
+>    - Enclosed by an intricate, ornate golden filigree frame with curling scrollwork, small side flourishes, and pointed top/bottom accents.
+>
+> 3. Left & Right Framing Islands (Midground):
+>    - Left side: A natural, irregular pixel-art floating cliff island with lush green grass, small trees/bushes, hanging vines, and a smaller grassy ledge below it, framed against the left clouds.
+>    - Right side: A taller, irregular pixel-art floating cliff island with lush green foliage, hanging vines, and mossy rock faces along the right edge, with the distant floating castle visible in the clouds to its lower-left.
+>
+> 4. Center Foreground Island & Character:
+>    - Large, wide, irregular pixel-art floating island centered in the foreground with a lush green grassy top, tiny wildflowers, hanging green vines draping down the front and sides, and a shaded rocky/earthy underside.
+>    - On the left and right edges of the grassy top of this center island, place glowing faceted crystal clusters (pastel/iridescent and emerald-green tones) emitting soft light sparkles and drifting starlight/firefly motes around the island.
+>    - Stand the brown-haired pixel-art girl with a purple hair bow and purple outfit/cape firmly on the grass in the center of this foreground island.
+>
+> 5. Bottom-Center Single "Start" Button:
+>    - Below the center of the foreground island (over its lower rocky area), place ONLY ONE ornate purple-and-gold pill/banner button with decorative side scrollwork/gems and crisp white text reading "Start" (with a small star icon on the left).
+>    - Preserve the existing onClick handler and add a subtle hover glow/scale effect.
+>
+> Asset & Code Requirements:
+> - If dedicated pixel-art sprites/PNGs for the title emblem, side islands, or ornate button do not already exist in the repository, write a generator script or pixel-art canvas/PNG asset pipeline in the project so they render as crisp pixel art (`image-rendering: pixelated`) and scale cleanly across 16:9 viewports without overlapping.
+
+<details>
+<summary><b>Work done</b></summary>
+
+- **Generator pipeline (`src/effects/pixelArt.js`):** draws every start-screen asset in code at low resolution (hard-edged masks, hand-placed palettes), shown at a whole-number scale with NEAREST filtering.
+  - **Title emblem:**
+    - "Emerald" over "World" in bold gold serif pixel letters with a 4-tone gold gradient, dark outline and drop shadow
+    - no box behind the letters: an open, bevelled gold filigree frame with inward-curved corners, curling scrollwork on all four corners, twin S-curl side flourishes ending in beads, and pointed top and bottom accents with leaf curls
+    - an emerald gem crowning the top, a small one on the bottom point, and four-point sparkles around it
+  - **Side islands (natural, from scratch):**
+    - uneven grassy top with tufts and a drooping lip
+    - round leafy bushes with blossoms, small trees (trunk plus 3-blob canopy), hanging vines
+    - a rocky underside of rounded hanging rock columns in the centre island's violet and peach colours, with wavy light edges, cracks, grain and patchy moss draping down
+    - the left island gets a smaller grassy ledge below it; the right one is taller and mossier
+  - **Centre island:** the START island art plus hanging vines on the front and sides, tiny wildflowers, and two faceted crystal clusters (emerald and pastel iridescent shards) on the left and right edges of the grass.
+  - **White crescent moon** (pixel art). The faint moon in the sky picture is erased so there is only one.
+  - **Start button (pixel art):** purple pill with a gold bevel, side scrollwork and emerald gems, a star icon, and crisp white "Start" text.
+- **Start screen (`src/scenes/MenuScene.js`):**
+  - **Sky:** deep purple to lavender with a soft mid band, about 70 twinkling pixel stars, a few clouds, the moon at left-centre with a soft glow, and misty mountains, clouds and the castle along the bottom (castle lower right, to the lower-left of the right island).
+  - **Title:** the emblem in the upper third with a subtle gold glow, a gem glint and four-point sparkles twinkling around it.
+  - **Centre:** the girl standing on the grass in the centre of the island, with crystal glows, light sparkles rising off the crystals, and firefly and starlight motes drifting around the island.
+  - **Start button:** exactly one, over the rocky underside, with hover scale (1.06) and a brighter glow. The click handler is unchanged.
+  - **Rendering:** `image-rendering: pixelated` on the canvas while the start screen shows, reset when the game starts.
+- **Tests:**
+  - start-screen layout check, 32/32 at 1280×720, 1366×768, 1536×864, 1600×900, 1920×1080 and 2560×1440:
+    - title in the upper third; title, character and button stacked with no overlaps
+    - feet on the grass, button over the underside
+    - exactly one Start button, all generated art NEAREST-filtered
+    - hover and click work
+  - game suites still pass
+
+</details>
+
+### 🤖 Claude
+
+The start screen is redesigned as a pixel-art fantasy title screen with one Start button.
+
+- **Title:** "Emerald" over "World" in gold pixel lettering. It sits inside an open gold filigree frame with curling corners, side flourishes, pointed top and bottom with emerald gems, and twinkling four-point sparkles. There is no dark box behind it.
+- **Sky:** twilight purple to lavender with twinkling stars, a few clouds, a white crescent moon on the left, and misty mountains and the distant castle along the bottom right.
+- **Side islands:** natural floating cliffs with grass, little trees and bushes, hanging vines and mossy rock. The left one has a smaller ledge below it; the right one is taller.
+- **Centre:** she stands on the grass of the big centre island, which has vines, wildflowers and glowing emerald and iridescent crystals on both edges, with sparkles and fireflies drifting around.
+- **Start button:** a single purple-and-gold pixel-art button with scrollwork, gems, a star and white "Start" text. It grows slightly and glows on hover; clicking works as before.
+
+All the art is generated by a new script in the project (`src/effects/pixelArt.js`), so it stays crisp. Everything is checked at six common 16:9 sizes with no overlaps.
