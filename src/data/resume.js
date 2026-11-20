@@ -8,6 +8,10 @@
  * An item can have:
  *   title        – bold first line
  *   text         – description; wrap words in **double stars** for bold
+ *   link         – { url, label } a button that opens the link in a new tab
+ *                  (e.g. a project video)
+ *   image        – { src, alt } a picture shown in the item (click to open it
+ *                  full size), e.g. a certificate in assets/objects/
  *   placeholder  – shown as a dashed "to add" note instead of real content.
  *                  Replace a placeholder item with real { title, text } when ready.
  *
@@ -56,6 +60,7 @@ export const RESUME = {
         {
           title: 'Project One: Logic Gates',
           text: 'My teammates and I built AND, OR and NOT logic gates on a breadboard. We wired each gate by hand and tested how it works.',
+          link: { url: 'https://www.youtube.com/watch?v=x8UsmFHUHb0', label: '▶ Watch the video' },
         },
       ],
     },
@@ -70,7 +75,11 @@ export const RESUME = {
           title: 'YONCA – AI-Based Daily Farm Planner',
           text: '**My teammate and I built an AI-based daily farm planner for farmers, created for the Yonca app.**',
         },
-        { placeholder: 'Add certificates here' },
+        {
+          title: 'Challenge Winner – YONCA AI-Based Daily Farm Planner, Data-Free Prototype',
+          text: 'İnnovasiyalar Mərkəzi · ASAN AI Hub · DigiRella — 8 April 2026, Baku',
+          image: { src: 'assets/objects/yonca-certificate.jpg', alt: 'YONCA Challenge Winner certificate, 8 April 2026, Baku' },
+        },
       ],
     },
   ],

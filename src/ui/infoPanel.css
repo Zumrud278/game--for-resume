@@ -131,6 +131,34 @@
 .rp-item-text { margin: 4px 0 0; color: var(--rp-text); }
 .rp-item-text strong { color: #fff; }
 
+/* Link button inside an item (e.g. a project video) */
+.rp-link {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 5px 14px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #8a4fd8, #6334b4);
+  border: 1.5px solid var(--rp-gold);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.9em;
+  text-decoration: none;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+.rp-link:hover, .rp-link:focus-visible { transform: translateY(-1px); box-shadow: 0 0 12px rgba(255, 215, 0, 0.45); }
+
+/* Picture inside an item (e.g. a certificate) — click opens it full size */
+.rp-image { display: block; margin-top: 10px; }
+.rp-image img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+  border: 1.5px solid rgba(255, 215, 0, 0.55);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+}
+.rp-image:hover img { border-color: var(--rp-gold); }
+
 /* "To add" placeholders */
 .rp-item.rp-placeholder {
   background: transparent;

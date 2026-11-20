@@ -15,6 +15,8 @@ const escapeHtml = (s) =>
 
 // Safe text with **bold** support
 const richText = (s) => escapeHtml(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+// Only web links and files inside the project are allowed in links / images
+const safeUrl = (u) => (/^(https?:\/\/|assets\/)/.test(u || '') ? escapeHtml(u) : '#');
 
 /**
  * Purple resume information panel, drawn as an HTML overlay so the text
@@ -115,6 +117,8 @@ export class InfoPanel {
       return `<li class="rp-item">
           ${item.title ? `<p class="rp-item-title">${richText(item.title)}</p>` : ''}
           ${item.text ? `<p class="rp-item-text">${richText(item.text)}</p>` : ''}
+          ${item.image ? `<a class="rp-image" href="${safeUrl(item.image.src)}" target="_blank" rel="noopener" title="Open full size"><img src="${safeUrl(item.image.src)}" alt="${escapeHtml(item.image.alt || '')}" loading="lazy" /></a>` : ''}
+          ${item.link ? `<a class="rp-link" href="${safeUrl(item.link.url)}" target="_blank" rel="noopener">${escapeHtml(item.link.label || 'Open link')}</a>` : ''}
         </li>`;
     });
     return `<ul class="rp-list">${li.join('')}</ul>`;

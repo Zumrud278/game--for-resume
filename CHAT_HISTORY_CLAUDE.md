@@ -2375,3 +2375,49 @@ Everything else is unchanged, and all tests pass.
 ### 🤖 Claude
 
 **Done:** when a node's information opens, pressing **Enter** closes it and she can carry on straight away. Esc and the Continue button still work too. The hint at the bottom of the panel now says "Press Enter or Esc to close", and the Explore Resume panel closes with Enter as well. All tests pass.
+
+
+---
+
+## Turn 40 — Logic Gates video on PROJECTS; YONCA certificate on ACHIEVEMENTS
+
+### 👤 You
+
+> *(attached: photo of the framed certificate — "YONCA AI-Based Daily Farm Planner - Data-Free Prototype", CHALLENGE WINNER, İnnovasiyalar Mərkəzi · ASAN AI Hub · DigiRella, 8 April 2026, Baku)*
+>
+> project node add video link :https://www.youtube.com/watch?si=diVqLaLj_35HTnl9&v=x8UsmFHUHb0&feature=youtu.be
+> yonca ceritificate achievemt:
+
+<details>
+<summary><b>Work done</b></summary>
+
+- **Video (PROJECTS):**
+  - looked up the video's public title: "Breadboard Guide: Constructing Logic Gates and Understanding the Circuit" by Group 25, so it belongs to the Logic Gates project
+  - added a "▶ Watch the video" button under *Project One: Logic Gates*
+  - it opens `https://www.youtube.com/watch?v=x8UsmFHUHb0` (the same video, without the tracking parts of the link) in a new tab, so the game stays open
+- **Certificate (ACHIEVEMENTS):**
+  - saved a web-sized copy of the photo as `assets/objects/yonca-certificate.jpg` (1200×868, 117 KB)
+  - new item: **Challenge Winner – YONCA AI-Based Daily Farm Planner, Data-Free Prototype**, "İnnovasiyalar Mərkəzi · ASAN AI Hub · DigiRella — 8 April 2026, Baku" (all taken from the certificate), with the certificate picture
+  - clicking the picture opens it full size in a new tab
+  - the "Add certificates here" placeholder was removed
+- **How (`src/data/resume.js`, `src/ui/InfoPanel.js`, `src/ui/infoPanel.css`):**
+  - items can now have `link: { url, label }` and `image: { src, alt }`, documented at the top of `resume.js`
+  - links and pictures only accept web addresses or files inside `assets/`
+  - styled to match the panel: purple button with a gold border, and a picture with a gold frame and soft shadow
+  - they also appear in the Explore Resume panel
+- **Tests:**
+  - new suite `media` passes 8/8:
+    - the video link sits under Logic Gates and opens in a new tab
+    - the certificate loads and fits the panel, and opens full size
+    - the placeholder is gone, Enter still closes the panel, and no files are missing
+  - the panels suite passes 27/27
+
+</details>
+
+### 🤖 Claude
+
+**Done:**
+- **Projects:** under *Project One: Logic Gates* there's now a "▶ Watch the video" button. It opens your breadboard logic gates video on YouTube in a new tab, so the game stays open.
+- **Achievements:** a new item, **Challenge Winner – YONCA AI-Based Daily Farm Planner, Data-Free Prototype** (İnnovasiyalar Mərkəzi · ASAN AI Hub · DigiRella — 8 April 2026, Baku), shows your certificate photo. Click it to see it full size. The "Add certificates here" placeholder is gone.
+
+Both also show in the Explore Resume panel. All tests pass. Remember to commit the new certificate picture too.
