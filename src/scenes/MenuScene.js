@@ -11,7 +11,7 @@ import {
  *   top:     "Zumrud's / World" title with gold Baroque ornament and a crown
  *   sides:   smaller floating islands from the game itself framing the view
  *   centre:  the girl standing still on a wide floating island with vines
- *            and wildflowers — she only blinks
+ *            and wildflowers
  *   bottom:  the original Start button (assets/ui/start.png, gently pulsing)
  * All pixel art is generated in src/effects/pixelArt.js and shown at a
  * whole-number scale with NEAREST filtering (crisp, pixelated).
@@ -236,27 +236,10 @@ export class MenuScene extends Phaser.Scene {
   }
 
   /**
-   * The girl on the start screen: she stands still and only blinks — every
-   * 2–5 s, sometimes twice. The closed-eye frame is pre-drawn at her
-   * start-screen size (BootScene), so she stays crisp and never shifts.
+   * The girl on the start screen: standing still on the grass (no blinking,
+   * no movement). Her frame is pre-drawn at its start-screen size, so she stays crisp.
    */
   createGirl(x, feetY, scale) {
-    const girl = this.add.image(x, feetY, 'idle_menu').setOrigin(0.5, 201 / 203).setScale(scale);
-    if (!this.textures.exists('idle_blink_menu')) return girl;
-    const rnd = new Phaser.Math.RandomDataGenerator(['girl']);
-    const blinkOnce = () => {
-      girl.setTexture('idle_blink_menu');
-      this.time.delayedCall(130, () => girl.setTexture('idle_menu'));
-    };
-    const scheduleBlink = () => {
-      this.time.delayedCall(rnd.between(2000, 4800), () => {
-        blinkOnce();
-        if (rnd.frac() < 0.25) this.time.delayedCall(280, blinkOnce);
-        scheduleBlink();
-      });
-    };
-    this.time.delayedCall(900, blinkOnce);
-    scheduleBlink();
-    return girl;
+    return this.add.image(x, feetY, 'idle_menu').setOrigin(0.5, 201 / 203).setScale(scale);
   }
 }

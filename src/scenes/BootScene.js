@@ -11,6 +11,32 @@ const CHARACTER_KEYS = ['idle', 'jump', 'fall', 'land', 'celebrate', 'float', 'r
  * then a soft closed-lid curve is drawn, like her closed eyes in other poses.
  * Coordinates are in the original idle.png (139×203).
  */
+// The standing pose (idle.png) has both arms tucked behind the cape, so her
+// hands don't show. For the start screen, a copy with two small hands painted
+// in her own skin tones and outline colour: one under the near sleeve's cuff
+// (by her bag), one peeking out of the cape beside her skirt. idle.png itself
+// is unchanged.
+function makeIdleWithHands(scene) {
+  const src = scene.textures.get('idle').getSourceImage();
+  const c = document.createElement('canvas');
+  c.width = src.width;
+  c.height = src.height;
+  const ctx = c.getContext('2d');
+  ctx.drawImage(src, 0, 0);
+  const PAL = { o: 'rgb(74,36,44)', L: 'rgb(250,212,184)', m: 'rgb(246,186,158)', s: 'rgb(226,150,130)' };
+  const NEAR = ['.ooooo.', 'oLLLLmo', 'oLLLmmo', 'omLmmso', '.ommsso', '..oooo.'];
+  const FAR = ['.ooo.', 'oLLmo', 'oLmmo', 'oLmso', 'ommso', '.ooo.'];
+  const put = (rows, x0, y0) => rows.forEach((row, j) => [...row].forEach((ch, i) => {
+    if (!PAL[ch]) return;
+    ctx.fillStyle = PAL[ch];
+    ctx.fillRect(x0 + i, y0 + j, 1, 1);
+  }));
+  put(NEAR, 70, 113);
+  put(FAR, 104, 121);
+  if (scene.textures.exists('idle_hands')) scene.textures.remove('idle_hands');
+  scene.textures.addCanvas('idle_hands', c);
+}
+
 function makeBlinkTexture(scene) {
   const src = scene.textures.get('idle').getSourceImage();
   const c = document.createElement('canvas');
@@ -154,12 +180,17 @@ export class BootScene extends Phaser.Scene {
 
     // Character: every pose drawn once at its exact in-game size, so she's
     // rendered 1:1 — her eyes and fine details stay stable while she moves
-    prescaleTexture(this, 'idle', 0.75, 'idle_menu');   // start-screen copies (their own size)
-    prescaleTexture(this, 'celebrate', 0.75, 'celebrate_menu');
-    // Blink frame (eyes closed): for the start screen and her idle life on the rainbow island
+    // start-screen copies (their own size); on the start screen she shows her hands
+    if (!this.missing.includes('idle')) {
+      makeIdleWithHands(this);
+      prescaleTexture(this, 'idle_hands', 0.75, 'idle_menu');
+      this.textures.remove('idle_hands');
+    } else {
+      prescaleTexture(this, 'idle', 0.75, 'idle_menu');
+    }
+    // Blink frame (eyes closed) for her idle life on the rainbow island
     if (!this.missing.includes('idle')) {
       makeBlinkTexture(this);
-      prescaleTexture(this, 'idle_blink', 0.75, 'idle_blink_menu');
       prescaleTexture(this, 'idle_blink', PLAYER_SCALE);
     }
     CHARACTER_KEYS.forEach((key) => {

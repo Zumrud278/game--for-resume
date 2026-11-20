@@ -2198,3 +2198,40 @@ Everything else is unchanged and all tests pass.
 - **Start button:** back to the original one, with its gentle pulse, in its original spot. Clicking it starts the game as before.
 
 Everything else is unchanged, and all tests pass.
+
+
+---
+
+## Turn 35 — Start screen: her hands show, no blinking
+
+### 👤 You
+
+> where is the hand of my character it looks like she does not have hands and donot make her blinking too it looks bad
+
+*(Asked how to fix the hands — options: paint hands at her sides / use the cheering pose / use a walking pose. You chose: **Paint hands at her sides**.)*
+
+<details>
+<summary><b>Work done</b></summary>
+
+- **Why the hands were missing:** the standing picture (`idle.png`) is drawn with both arms tucked behind the cape, so no hands show. It wasn't a scaling problem, and none of her other standing pictures show hands at her sides.
+- **Blinking removed:** `createGirl` in `MenuScene.js` now just places her standing picture. She doesn't blink, move or react.
+- **Hands painted (`makeIdleWithHands` in `BootScene.js`):**
+  - a copy of the standing picture with two small pixel hands in her own skin tones (light, mid, shadow) and her dark outline colour
+  - near hand: 7×6px just under the white cuff of her near sleeve, resting by her bag
+  - far hand: 5×6px peeking out of the cape beside her skirt
+  - this copy becomes her start-screen picture (`idle_menu`). Her pose and position are unchanged (feet 427), and `idle.png` itself and the in-game character are unchanged.
+- Removed the now-unused start-screen blink and cheer frames.
+- **Tests:**
+  - start-screen suite passes 9/9: no blinking, hands show on both sides, she never moves, title, original Start button
+  - layout check passes 31/31
+  - game suites pass
+
+</details>
+
+### 🤖 Claude
+
+**Hands:** her standing picture was drawn with both arms hidden behind the cape, which is why she looked handless. I painted two small hands in her own skin tone and outline style on a copy of that picture: one by her bag under the sleeve, one peeking out of the cape by her skirt. Your original picture is untouched.
+
+**Blinking:** removed. She now stands completely still.
+
+Nothing else changed, and all tests pass.
