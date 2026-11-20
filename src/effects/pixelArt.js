@@ -260,97 +260,130 @@ function paintTitle(pc, g, ox, oy) {
   });
 }
 
-// ── Title emblem: "Emerald" / "World" inside an open gold filigree frame ──
+// ── Title emblem: "Emerald" / "World" with transparent gold Baroque ornament ──
+/** Tapered stroke through `pts` (width w0 → w1), round caps so it stays smooth. */
+function taper(ctx, pts, w0, w1) {
+  ctx.lineCap = 'round';
+  for (let i = 1; i < pts.length; i++) {
+    ctx.lineWidth = w0 + ((w1 - w0) * i) / (pts.length - 1);
+    ctx.beginPath();
+    ctx.moveTo(pts[i - 1][0], pts[i - 1][1]);
+    ctx.lineTo(pts[i][0], pts[i][1]);
+    ctx.stroke();
+  }
+}
+function spiralPts(cx, cy, r0, a0, turns, dir, n = 60, shrink = 0.82) {
+  const pts = [];
+  for (let k = 0; k <= n; k++) {
+    const t = k / n, a = a0 + dir * t * turns * Math.PI * 2, r = r0 * (1 - shrink * t);
+    pts.push([cx + Math.cos(a) * r, cy + Math.sin(a) * r]);
+  }
+  return pts;
+}
+function bezierPts(p0, p1, p2, p3, n = 30) {
+  const pts = [];
+  for (let k = 0; k <= n; k++) {
+    const t = k / n, u = 1 - t;
+    pts.push([
+      u * u * u * p0[0] + 3 * u * u * t * p1[0] + 3 * u * t * t * p2[0] + t * t * t * p3[0],
+      u * u * u * p0[1] + 3 * u * u * t * p1[1] + 3 * u * t * t * p2[1] + t * t * t * p3[1],
+    ]);
+  }
+  return pts;
+}
+function leaf(ctx, x, y, rx, ry, rot) {
+  ctx.beginPath();
+  ctx.ellipse(x, y, rx, ry, rot, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+/** Paints a mask as bevelled gold: bright top edge, warm middle, dark underside. */
+function paintGold(pc, set) {
+  const W = pc.w;
+  set.forEach((i) => {
+    const x = i % W, y = (i / W) | 0;
+    const up1 = set.has(i - W), up2 = set.has(i - 2 * W), dn1 = set.has(i + W);
+    pc.set(x, y, !up1 ? GOLD.hi : !dn1 ? GOLD.dark : !up2 ? GOLD.light : !set.has(i - 1) ? GOLD.light : GOLD.mid);
+  });
+}
+
 export function makeTitleEmblem(scene, key = 'menu_emblem') {
   if (scene.textures.exists(key)) return key;
   const FONT = 'bold 27px Georgia, "Times New Roman", serif';
   const l1 = glyphMask('Emerald', FONT);
   const l2 = glyphMask('World', FONT);
-  const GAP = 5, PADX = 18, PADY = 9, FLOUR = 26, TOPA = 16, BOTA = 14;
-  const innerW = Math.max(l1.tw, l2.tw);
-  const W = innerW + PADX * 2 + FLOUR * 2;
-  const H = l1.th + GAP + l2.th + PADY * 2 + TOPA + BOTA;
+  const GAP = 5, SIDE = 44, CROWN = 28, SWASH = 16;
+  const textW = Math.max(l1.tw, l2.tw);
+  let W = textW + SIDE * 2;
+  if (W % 2) W++;
+  const H = CROWN + l1.th + GAP + l2.th + SWASH + 4;
   const pc = new PixelCanvas(W, H);
-  const x0 = FLOUR, x1 = W - FLOUR - 1, y0 = TOPA, y1 = H - BOTA - 1;
-  const cx = Math.floor(W / 2), cy = Math.round((y0 + y1) / 2);
-  const C = 9;                                   // inward corner size
+  const cx = W / 2;
+  const tTop = CROWN, tBot = CROWN + l1.th + GAP + l2.th, tMid = (tTop + tBot) / 2;
+  const tx0 = cx - textW / 2;                  // left edge of the lettering
+  const band = CROWN - 6;                      // crown band (top row)
 
+  // ── Left half of the ornament (mirrored for the right) + centre pieces ──
+  const left = makeMask(W, H, (ctx) => {
+    ctx.strokeStyle = '#fff';
+    // Big C-scroll volute beside the title, curling inward
+    const C = [tx0 - 19, tMid + 2];
+    taper(ctx, spiralPts(C[0], C[1], 17, -Math.PI / 2 + 0.25, 1.12, -1), 4.2, 1.4);
+    // its upper tail reaching in toward the lettering, ending in a small curl
+    taper(ctx, bezierPts([C[0] + 4, C[1] - 17], [tx0 - 6, tTop - 6], [tx0 - 2, tTop - 5], [tx0 - 3, tTop + 1]), 3, 1.6);
+    taper(ctx, spiralPts(tx0 - 6, tTop + 3, 3.4, -Math.PI / 2, 0.85, 1), 1.8, 1.2);
+    // lower tail sweeping under the title, ending in a curl
+    taper(ctx, bezierPts([C[0] + 2, C[1] + 17], [tx0 - 4, tBot + 8], [tx0 + 6, tBot + 6], [tx0 + 10, tBot + 1]), 3, 1.5);
+    taper(ctx, spiralPts(tx0 + 8, tBot - 2, 3.4, Math.PI / 2, 0.85, -1), 1.8, 1.2);
+    // acanthus leaves along the outside of the volute
+    [[-2.5, 0.9], [-3.3, 1.2], [-1.9, 0.7]].forEach(([a, s]) => {
+      leaf(ctx, C[0] + Math.cos(a) * 21, C[1] + Math.sin(a) * 21, 4.2 * s, 1.7 * s, a + Math.PI / 2);
+    });
+    // pearls trailing outward
+    [[C[0] - 25, C[1] + 1, 1.7], [C[0] - 29, C[1] + 1, 1.2]].forEach(([x, y, r]) => { ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill(); });
+
+    // Crown: band, five points with balls, curls off both ends
+    ctx.fillRect(cx - 15, band, 30, 4);
+    [[-13, 8], [-6.5, 11], [0, 15], [6.5, 11], [13, 8]].forEach(([dx, h]) => {
+      ctx.beginPath();
+      ctx.moveTo(cx + dx - 3, band + 0.5); ctx.lineTo(cx + dx, band - h); ctx.lineTo(cx + dx + 3, band + 0.5);
+      ctx.closePath(); ctx.fill();
+      ctx.beginPath(); ctx.arc(cx + dx, band - h - 1, 1.7, 0, Math.PI * 2); ctx.fill();
+    });
+    ctx.fillRect(cx - 17, band + 4, 34, 2);                                       // lower rim
+    taper(ctx, bezierPts([cx - 16, band + 3], [cx - 22, band + 1], [cx - 28, band + 2], [cx - 31, band + 6]), 2.6, 1.6);
+    taper(ctx, spiralPts(cx - 31, band + 9, 3.2, -Math.PI / 2, 0.85, -1), 1.7, 1.1);
+
+    // Swash under the title: tapered sweep out from the centre, curling up at the end
+    taper(ctx, bezierPts([cx - 4, tBot + 9], [cx - 16, tBot + 15], [cx - 30, tBot + 13], [cx - 40, tBot + 7]), 2.8, 1.3);
+    taper(ctx, spiralPts(cx - 41, tBot + 3, 3.3, Math.PI / 2, 0.85, 1), 1.6, 1.1);
+  }, 100);
   const gold = new Set();
-  const add = (s) => s.forEach((i) => gold.add(i));
-  // Outer frame: concave corners, peak on top, drop at the bottom, points on the sides
-  add(goldStroke(pc, (ctx) => {
-    ctx.lineWidth = 2.2;
-    ctx.beginPath();
-    ctx.moveTo(x0 + C, y0);
-    ctx.lineTo(cx - 12, y0); ctx.lineTo(cx, y0 - 9); ctx.lineTo(cx + 12, y0);
-    ctx.lineTo(x1 - C, y0); ctx.quadraticCurveTo(x1 - C, y0 + C, x1, y0 + C);
-    ctx.lineTo(x1, cy - 7); ctx.lineTo(x1 + 7, cy); ctx.lineTo(x1, cy + 7);
-    ctx.lineTo(x1, y1 - C); ctx.quadraticCurveTo(x1 - C, y1 - C, x1 - C, y1);
-    ctx.lineTo(cx + 12, y1); ctx.lineTo(cx, y1 + 9); ctx.lineTo(cx - 12, y1);
-    ctx.lineTo(x0 + C, y1); ctx.quadraticCurveTo(x0 + C, y1 - C, x0, y1 - C);
-    ctx.lineTo(x0, cy + 7); ctx.lineTo(x0 - 7, cy); ctx.lineTo(x0, cy - 7);
-    ctx.lineTo(x0, y0 + C); ctx.quadraticCurveTo(x0 + C, y0 + C, x0 + C, y0);
-    ctx.closePath();
-    ctx.stroke();
-  }));
-  // Fine inner frame line
-  add(goldStroke(pc, (ctx) => {
-    ctx.lineWidth = 1.1;
-    const i = 4;
-    ctx.beginPath();
-    ctx.moveTo(x0 + C + i, y0 + i); ctx.lineTo(x1 - C - i, y0 + i);
-    ctx.quadraticCurveTo(x1 - C, y0 + C, x1 - i, y0 + C + i);
-    ctx.lineTo(x1 - i, y1 - C - i); ctx.quadraticCurveTo(x1 - C, y1 - C, x1 - C - i, y1 - i);
-    ctx.lineTo(x0 + C + i, y1 - i); ctx.quadraticCurveTo(x0 + C, y1 - C, x0 + i, y1 - C - i);
-    ctx.lineTo(x0 + i, y0 + C + i); ctx.quadraticCurveTo(x0 + C, y0 + C, x0 + C + i, y0 + i);
-    ctx.stroke();
-  }));
-  // Curling scrollwork on the four corners, outside the frame
-  add(goldStroke(pc, (ctx) => {
-    ctx.lineWidth = 1.6;
-    [[x0, y0, -1, -1], [x1, y0, 1, -1], [x0, y1, -1, 1], [x1, y1, 1, 1]].forEach(([x, y, sx, sy]) => {
-      spiralPath(ctx, x + sx * 3, y + sy * 3, 5, 0.9, Math.atan2(-sy, -sx), sx * sy);
-    });
-  }));
-  // Side flourishes: twin S-curls running out of the side points, ending in beads
-  add(goldStroke(pc, (ctx) => {
-    ctx.lineWidth = 1.6;
-    [[x0 - 7, -1], [x1 + 7, 1]].forEach(([px, s]) => {
-      [-1, 1].forEach((v) => {
-        ctx.beginPath();
-        ctx.moveTo(px, cy);
-        ctx.bezierCurveTo(px + s * 6, cy + v * 9, px + s * 12, cy - v * 2, px + s * 15, cy + v * 6);
-        ctx.stroke();
-        spiralPath(ctx, px + s * 15, cy + v * 9, 3.5, 0.85, Math.atan2(-v, 0), -s * v);
-      });
-      ctx.beginPath(); ctx.moveTo(px, cy); ctx.lineTo(px + s * 9, cy); ctx.stroke();
-      ctx.beginPath(); ctx.arc(px + s * 11, cy, 1.4, 0, Math.PI * 2); ctx.fill();
-    });
-  }));
-  // Pointed top & bottom accents with little leaf curls
-  add(goldStroke(pc, (ctx) => {
-    ctx.lineWidth = 1.6;
-    ctx.beginPath(); ctx.moveTo(cx, y0 - 9); ctx.lineTo(cx, 1); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(cx, y1 + 9); ctx.lineTo(cx, H - 2); ctx.stroke();
-    [-1, 1].forEach((s) => {
-      spiralPath(ctx, cx + s * 6, y0 - 9, 3.5, 0.75, Math.PI / 2, -s);
-      spiralPath(ctx, cx + s * 6, y1 + 9, 3.5, 0.75, -Math.PI / 2, s);
-    });
-  }));
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    if (left[y * W + x]) { gold.add(y * W + x); gold.add(y * W + (W - 1 - x)); }   // mirror
+  }
+  paintGold(pc, gold);
   pc.outlineMask(gold, '#2a0f3a');
 
-  // Two lines of lettering, centred
-  const ty = y0 + PADY + 1;
-  paintTitle(pc, l1, Math.round(cx - l1.tw / 2), ty);
-  paintTitle(pc, l2, Math.round(cx - l2.tw / 2), ty + l1.th + GAP);
+  // Crown jewels: an emerald on the band, pearls on the points, gold beads
+  drawGem(pc, GEM_SMALL, cx, band + 2);
+  [[-13, 8], [-6.5, 11], [0, 15], [6.5, 11], [13, 8]].forEach(([dx, h]) => {
+    const px = Math.round(cx + dx - 0.5), py = band - h - 2;
+    pc.set(px, py, '#ffffff'); pc.set(px + 1, py, '#efe6ff'); pc.set(px, py + 1, '#e2d6ff'); pc.set(px + 1, py + 1, '#c9b8f0');
+  });
+  [-10, 10].forEach((dx) => { pc.set(cx + dx, band + 2, EMERALD.light); pc.set(cx + dx + (dx < 0 ? -1 : 1), band + 2, EMERALD.mid); });
+  // small gem at the centre of the swash
+  drawGem(pc, GEM_SMALL, cx, tBot + 9);
 
-  // Gems on the accents, four-point sparkles around the frame
-  drawGem(pc, GEM_LARGE, cx, y0 - 4);
-  drawGem(pc, GEM_SMALL, cx, y1 + 4);
-  [[x0 + 2, y0 - 9], [x1 - 2, y1 + 8], [x1 + 9, y0 + 2], [x0 - 10, y1 - 2]].forEach(([x, y]) => pc.pattern(SPARK4, SPARK_PAL, x - 3, y - 3));
+  // Lettering: gold, dark outline, deep drop shadow (stands out on the sky)
+  paintTitle(pc, l1, Math.round(cx - l1.tw / 2), tTop);
+  paintTitle(pc, l2, Math.round(cx - l2.tw / 2), tTop + l1.th + GAP);
+
+  // four-point sparkles in the ornament
+  [[tx0 - 34, tTop - 2], [W - 1 - (tx0 - 34), tBot - 4], [cx - 26, band - 9], [cx + 25, tBot + 14]].forEach(([x, y]) => pc.pattern(SPARK4, SPARK_PAL, Math.round(x) - 3, Math.round(y) - 3));
 
   pc.toTexture(scene, key);
-  scene.textures.get(key).customData.emblem = { gemX: cx, gemY: y0 - 4, frame: [x0, y0, x1, y1] };
+  scene.textures.get(key).customData.emblem = { gemX: cx, gemY: band + 2 };
   return key;
 }
 
@@ -519,133 +552,151 @@ export function makeEmeraldIsland(scene, key = 'menu_island') {
   return key;
 }
 
-// ── Natural floating cliff islands (midground framing) ──
+// ── Side cliffs: wide natural cliffs rising from the bottom clouds ──
+// Warm brown-purple rock in layers (two families, so the strata alternate)
+const ROCK_PURPLE = ['#2c1838', '#4c2c58', '#71436d', '#9a6078', '#c88a86'];
+const ROCK_BROWN = ['#2f1b24', '#553142', '#7d4c55', '#a86c66', '#d49882'];
+
+// Smooth value noise in [0, 1) (bilinear between hashed grid points)
+function vnoise(x, y, cell, s) {
+  const gx = Math.floor(x / cell), gy = Math.floor(y / cell);
+  const fx = x / cell - gx, fy = y / cell - gy;
+  const sx = fx * fx * (3 - 2 * fx), sy = fy * fy * (3 - 2 * fy);
+  const a = hash(gx, gy, s), b = hash(gx + 1, gy, s), c = hash(gx, gy + 1, s), d = hash(gx + 1, gy + 1, s);
+  return a + (b - a) * sx + (c - a) * sy + (a - b - c + d) * sx * sy;
+}
+const BUSH = ['#8fdc7f', '#4fb35a', '#2f7a3a'];
+const LEAF = ['#7acb6e', '#3e9a4e', '#256b38'];
+const PETALS = ['#ffb3d9', '#ffd1a8', '#d9b3ff', '#ffffff', '#b3e5ff', '#fff3a0'];
+
 /**
- * A floating island drawn from scratch: an irregular grassy top with tufts,
- * bushes and small trees, hanging vines, and a rocky underside made of
- * rounded hanging rock columns (lit on their left), with moss on the faces.
- *   o.w      walkable width (px)      o.depth   longest column below the grass
- *   o.trees  x positions of trees     o.bushes  x positions of bushes
- *   o.moss   0..1 how mossy the rock faces are (more toward the right)
+ * A cliff anchored to the bottom of its texture (it stands in the clouds).
+ *   o.w, o.h      texture size (px)       o.top    row of the grass line
+ *   o.face        'right' | 'left'        which side faces the middle of the screen
+ *   o.faceAt(r)   x of that face, r rows below the grass line (overhangs allowed)
+ *   o.trees, o.shrubs, o.flowers   x positions on the top
  */
-export function makeFloatingIsland(scene, key, o) {
+export function makeCliff(scene, key, o) {
   if (scene.textures.exists(key)) return key;
+  const { w: W, h: H, top: T } = o;
   const seed = o.seed ?? 1;
-  const M = 8, T = o.trees?.length ? 30 : 16;
-  const W = o.w + M * 2, H = T + 10 + o.depth + 6;
+  const right = o.face === 'right';
   const pc = new PixelCanvas(W, H);
   const solid = new Set();
   const put = (x, y, c) => { if (!pc.in(x, y)) return; pc.set(x, y, c); solid.add(y * W + x); };
 
-  // Grass surface line (gently uneven)
-  const surf = [];
-  for (let x = 0; x < W; x++) surf[x] = T + Math.round((hash(x >> 3, 1, seed) - 0.5) * 3 + Math.sin(x / 9 + seed) * 0.8);
+  // Rock layers: varied thickness, each jutting out a little at the face
+  const bands = [];
+  for (let y = T + 3, j = 0; y < H; j++) {
+    const th = 6 + Math.floor(hash(j, 1, seed) * 10);
+    bands.push({ y0: y, th, jut: Math.round((hash(j, 2, seed) - 0.5) * 7), pal: hash(j, 3, seed) > 0.45 ? ROCK_BROWN : ROCK_PURPLE, tone: hash(j, 4, seed), j });
+    y += th;
+  }
+  const bandAt = (y) => bands.find((b) => y < b.y0 + b.th) || bands[bands.length - 1];
+  const faceX = (y) => {
+    const b = y >= T + 3 ? bandAt(y) : bands[0];
+    const rough = (vnoise(0, y, 5, seed + 4) - 0.5) * 6;            // ragged, not ruler-straight
+    return Math.round(o.faceAt(y - T) + (right ? b.jut : -b.jut) + rough);
+  };
+  // rock relief: two octaves of smooth noise, read as bumps lit from the upper left
+  const relief = (x, y) => vnoise(x, y, 7, seed + 10) * 0.65 + vnoise(x, y, 3.5, seed + 11) * 0.35;
+  const topY = (x) => T + Math.round(Math.sin(x / 11 + seed) * 1.3 + (hash(x >> 2, 5, seed) - 0.5) * 2);
+  const inside = (x, y) => y >= topY(x) && (right ? x <= faceX(y) : x >= faceX(y));
 
-  // Rock columns hanging under the grass
-  // (palette matched to the centre island's rock: violet with warm peach light)
-  const ROCK = ['#352048', '#5a3870', '#87538d', '#b47199', '#dc9c80'];
-  let x = M;
-  let prevLen = 0;
-  while (x < M + o.w) {
-    const cw = 7 + Math.floor(hash(x, 2, seed) * 6);
-    const c0 = x, c1 = Math.min(M + o.w - 1, x + cw - 1);
-    const u = ((c0 + c1) / 2 - M) / o.w;
-    const prof = Math.max(0, 1 - Math.pow(Math.abs(2 * u - 1), 1.7));
-    let len = Math.max(5, Math.round(o.depth * prof * (0.72 + 0.4 * hash(x, 4, seed))));
-    if (prevLen) len = Math.round(len * 0.65 + prevLen * 0.35);        // neighbours hang to similar depths
-    prevLen = len;
-    const mossLen = o.moss ? Math.round(len * o.moss * (0.4 + 0.9 * hash(x, 3, seed)) * (0.5 + u)) : 0;
-    for (let cx = c0; cx <= c1; cx++) {
-      const v = (cx - c0) / Math.max(1, c1 - c0);
-      const top = surf[cx] + 2;
-      const bottom = top + 2 + len - Math.round(Math.pow(2 * v - 1, 2) * Math.min(7, len / 2));
-      const mossEnd = top + mossLen - Math.floor(hash(cx, 15, seed) * 4);
-      for (let y = top; y <= bottom; y++) {
-        const fy = (y - top) / (len + 2);
-        const vv = v + Math.sin(y / 3.5 + c0) * 0.08;       // lumpy, wavy light edge
-        let s = vv < 0.2 ? 3 : vv < 0.62 ? 2 : 1;           // rounded column: lit left, shaded right
-        if (vv < 0.1 && fy < 0.55) s = 4;                    // warm rim light
-        if (cx === c0 && c0 !== M) s = 0;                    // crevice between columns
-        if (fy > 0.7) s -= 1;
-        if ((y + c0 * 3) % 9 === 0 && hash(c0, y, seed + 4) > 0.45) s -= 1;   // cracks across the stone
-        const n = hash(cx, y, seed + 6);
-        if (n > 0.9) s += 1; else if (n < 0.08) s -= 1;      // grain
-        if (y < top + 3) s = Math.min(s, 1);                 // shadow under the grass
-        let col = ROCK[Math.max(0, Math.min(4, s))];
-        // patchy moss draping down from the grass
-        if (y < mossEnd && cx !== c0 && hash(cx >> 1, y >> 1, seed + 3) > 0.3) {
-          col = vv < 0.3 ? '#6fcf6a' : vv < 0.75 ? (n > 0.6 ? '#5cc06a' : '#4fb35a') : '#2f7a3a';
-        }
-        put(cx, y, col);
-      }
-    }
-    x = c1 + 1;
+  // Rock
+  for (let y = T; y < H; y++) for (let x = 0; x < W; x++) {
+    if (!inside(x, y) || y < topY(x) + 3) continue;
+    // which layer: boundaries wander up and down irregularly
+    const wobble = (y2) => Math.round(Math.sin(x / 9 + bandAt(y2).j * 1.7) * 1.5 + (vnoise(x, bandAt(y2).j * 13, 8, seed + 3) - 0.5) * 4);
+    let b = bandAt(y);
+    let k = y - b.y0 - wobble(y);
+    if (k < 0 && b.j > 0) { b = bands[b.j - 1]; k = y - b.y0 - wobble(b.y0); }
+    let s = 2 + (b.tone > 0.62 ? 1 : b.tone < 0.25 ? -1 : 0);
+    const h = relief(x, y);
+    s += Math.round((relief(x - 1, y - 1) - relief(x + 1, y + 1)) * 6.5);   // lumpy rock surface
+    const big = vnoise(x, y, 16, seed + 12);
+    if (big > 0.68) s += 1; else if (big < 0.3) s -= 1;
+    if (k <= 0 && hash(x, b.j, seed + 9) > 0.25) s += 1;     // lit lip along each layer
+    if (k >= b.th - 1) s -= 1;                               // shadow under each ledge
+    const d = right ? faceX(y) - x : x - faceX(y);           // distance from the face
+    if (d < 2) s += right ? -1 : 1;                          // the face itself: shaded / lit
+    if (d >= 2 && d < 5 && !right) s += 1;
+    const n = hash(x, y, seed + 6);
+    if (n > 0.97) s += 1; else if (n < 0.02) s -= 1;         // fine grain
+    if (Math.abs(h - 0.5) < 0.007 && big < 0.6) s = Math.min(s, 1);                    // natural winding fissures
+    let c = b.pal[Math.max(0, Math.min(4, s))];
+    if (k === 0 && d < 7 && hash(x, b.j, seed + 8) > 0.45) c = d < 3 ? '#6fcf6a' : '#4fb35a';   // moss on ledges
+    put(x, y, c);
   }
 
-  // Grass cap with a drooping lip and tufts
-  for (let gx = M - 3; gx < M + o.w + 3; gx++) {
-    const th = 5 + Math.floor(hash(gx, 6, seed) * 3);
-    const edge = gx < M || gx >= M + o.w;
-    const y0 = surf[gx] + (edge ? 2 : 0);
-    for (let k = 0; k < th - (edge ? 2 : 0); k++) {
-      put(gx, y0 + k, k === 0 ? '#9be08f' : k === 1 ? '#6fcf6a' : k < th - 2 ? '#4fb35a' : '#2f7a3a');
-    }
-    const drip = hash(gx, 7, seed);
-    if (drip > 0.6) for (let k = 0; k < 1 + Math.floor(drip * 3); k++) put(gx, y0 + th + k, '#2f7a3a');
-    if (hash(gx, 8, seed) > 0.7) put(gx, y0 - 1, '#7fd27a');           // tuft
+  // Grass cap, drooping over the face
+  for (let x = 0; x < W; x++) {
+    const t = topY(x);
+    if (!inside(x, t)) continue;
+    const d = right ? faceX(t) - x : x - faceX(t);
+    const th = 5 + Math.floor(hash(x, 6, seed) * 3) + (d < 3 ? 2 : 0);
+    for (let k2 = 0; k2 < th; k2++) put(x, t + k2, k2 === 0 ? '#9be08f' : k2 === 1 ? '#6fcf6a' : k2 < th - 2 ? '#4fb35a' : '#2f7a3a');
+    if (hash(x, 7, seed) > 0.62) for (let k2 = 0; k2 < 1 + Math.floor(hash(x, 9, seed) * 3); k2++) put(x, t + th + k2, '#2f7a3a');
+    if (hash(x, 8, seed) > 0.68) put(x, t - 1, '#7fd27a');
+  }
+  // the lip curls a few px past the face
+  for (let k2 = 1; k2 <= 3; k2++) {
+    const fx = faceX(T) + (right ? k2 : -k2);
+    for (let y = topY(fx) + 1; y < topY(fx) + 6 - k2; y++) put(fx, y, y === topY(fx) + 1 ? '#6fcf6a' : '#3a9a50');
   }
 
-  // Bushes: clustered round leafy blobs, lit from the upper left
+  // Foliage
   const blob = (bx, by, r, pal) => {
     for (let yy = -r; yy <= r; yy++) for (let xx = -r; xx <= r; xx++) {
       if (xx * xx + yy * yy > r * r + r * 0.6) continue;
-      const lit = -xx - yy;
-      const n = hash(bx + xx, by + yy, seed + 2);
-      put(bx + xx, by + yy, lit > r * 0.6 ? pal[0] : lit < -r * 0.5 ? pal[2] : n > 0.85 ? pal[0] : pal[1]);
+      const lit = -xx - yy, n = hash(bx + xx, by + yy, seed + 2);
+      put(bx + xx, by + yy, lit > r * 0.6 ? pal[0] : lit < -r * 0.5 ? pal[2] : n > 0.86 ? pal[0] : pal[1]);
     }
   };
-  const BUSH = ['#8fdc7f', '#4fb35a', '#2f7a3a'];
-  (o.bushes || []).forEach((bx, k) => {
-    const gx = M + bx, gy = surf[gx];
-    blob(gx - 3, gy - 2, 3, BUSH); blob(gx + 2, gy - 3, 4, BUSH); blob(gx + 6, gy - 1, 3, BUSH);
-    if (k % 2 === 0) { put(gx + 1, gy - 5, '#ffb3d9'); put(gx + 5, gy - 2, '#ffffff'); }
-  });
-  // Small trees: trunk + three-blob canopy
-  const LEAF = ['#7acb6e', '#3e9a4e', '#256b38'];
   (o.trees || []).forEach((tx, k) => {
-    const gx = M + tx, gy = surf[gx];
-    const th = 7 + (k % 2) * 3;
-    for (let k2 = 0; k2 < th; k2++) { put(gx, gy - k2, '#6b4226'); put(gx + 1, gy - k2, '#8a5a33'); }
-    const top = gy - th;
-    blob(gx - 3, top + 1, 5, LEAF); blob(gx + 4, top + 1, 5, LEAF); blob(gx, top - 3, 6, LEAF);
+    const gy = topY(tx), th = 11 + (k % 2) * 4;
+    for (let k2 = 0; k2 < th; k2++) { put(tx, gy - k2, '#5e3a22'); put(tx + 1, gy - k2, '#8a5a33'); }
+    put(tx - 1, gy, '#5e3a22'); put(tx + 2, gy, '#5e3a22');                       // roots
+    const t = gy - th;
+    blob(tx - 5, t + 2, 6, LEAF); blob(tx + 6, t + 2, 6, LEAF); blob(tx, t - 4, 7, LEAF); blob(tx + 2, t + 5, 5, LEAF);
   });
-
-  // Hanging vines from the grass lip
-  const vineSets = new Set();
-  for (let k = 0; k < Math.round(o.w / 9); k++) {
-    const vx = M + 2 + Math.floor(hash(k, 13, seed) * (o.w - 4));
-    let y = surf[vx] + 5;
-    const len = 6 + Math.floor(hash(k, 14, seed) * (o.depth * 0.45));
-    for (let i = 0; i < len; i++, y++) {
-      const xx = vx + Math.round(Math.sin(i * 0.5 + k) * 0.8);
-      pc.set(xx, y, '#2e6b35');
-      if (i % 3 === 1) pc.set(xx + 1, y, '#5fbf5a');
-      vineSets.add(y * W + xx);
-    }
-  }
+  (o.shrubs || []).forEach((sx, k) => {
+    const gy = topY(sx);
+    blob(sx - 3, gy - 2, 3, BUSH); blob(sx + 2, gy - 3, 4, BUSH); blob(sx + 6, gy - 1, 3, BUSH);
+    put(sx + 1, gy - 6, PETALS[k % PETALS.length]); put(sx + 5, gy - 3, PETALS[(k + 2) % PETALS.length]);
+  });
+  (o.flowers || []).forEach((fx, k) => {
+    const y = topY(fx) - 2, p = PETALS[k % PETALS.length];
+    put(fx, y + 2, '#3d8a3d'); put(fx, y + 1, '#3d8a3d');
+    [[0, -1], [-1, 0], [1, 0]].forEach(([dx, dy]) => put(fx + dx, y + dy, p));
+    put(fx, y, '#ffe066');
+  });
 
   pc.outlineMask(solid, '#1e1433');
-  vineSets.forEach((i) => { if (!solid.has(i)) pc.set(i % W, (i / W) | 0, '#2e6b35'); });   // vines over the outline
 
-  // mineral glints for twinkles
-  const glints = [];
-  for (let k = 0; k < 5; k++) {
-    const gx = M + Math.floor(o.w * (0.2 + 0.6 * hash(k, 21, seed)));
-    const gy = surf[gx] + 8 + Math.floor(o.depth * 0.4 * hash(k, 22, seed));
-    if (solid.has(gy * W + gx)) { pc.set(gx, gy, '#c8fff0'); glints.push({ x: gx, y: gy }); }
+  // Hanging vines: down the face from the grass lip, and from under any overhang
+  for (let k = 0; k < o.vines; k++) {
+    const vx = Math.floor(o.vineFrom + hash(k, 13, seed) * (o.vineTo - o.vineFrom));
+    let y = topY(vx) + 4;
+    while (y < H && solid.has(y * W + vx) && pc.in(vx, y + 1) && solid.has((y + 1) * W + vx) && y < topY(vx) + 8) y++;
+    // under an overhang: start where the rock ends
+    let yy = y;
+    while (yy < H && solid.has(yy * W + vx)) yy++;
+    if (yy < H - 20) y = yy;
+    const len = 10 + Math.floor(hash(k, 14, seed) * o.vineLen);
+    for (let i = 0; i < len && y < H; i++, y++) {
+      const x = vx + Math.round(Math.sin(i * 0.45 + k) * 0.9);
+      pc.set(x, y, '#2e6b35');
+      if (i % 4 === 1) pc.set(x + 1, y, '#5fbf5a');
+      if (i % 4 === 3) pc.set(x - 1, y, '#4aa64c');
+    }
+    if (hash(k, 15, seed) > 0.55) {
+      const p = PETALS[k % 3];
+      [[0, -1], [-1, 0], [1, 0], [0, 1]].forEach(([dx, dy]) => pc.set(vx + dx, y + dy, p));
+      pc.set(vx, y, '#fff3a0');
+    }
   }
 
   pc.toTexture(scene, key);
-  scene.textures.get(key).customData.island = { glints, grassY: T };
   return key;
 }

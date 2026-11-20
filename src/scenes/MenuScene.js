@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { COLORS } from '../utils/constants.js';
 import { prescaleTexture } from '../utils/textureQuality.js';
 import {
-  makeTitleEmblem, makeEmeraldIsland, makeFloatingIsland, makeStartButton, makeMoon, makePixelStar, makeSpark4,
+  makeTitleEmblem, makeEmeraldIsland, makeCliff, makeStartButton, makeMoon, makePixelStar, makeSpark4,
 } from '../effects/pixelArt.js';
 
 /**
@@ -135,30 +135,33 @@ export class MenuScene extends Phaser.Scene {
       this.tweens.add({ targets: cloud, x: cloud.x + rnd.between(-40, 40), duration: rnd.between(6000, 9000), yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
     });
 
-    // ── Midground: natural floating cliff islands framing the left and right ──
-    const sideIsland = (key, opts, x, y, delay) => {
-      makeFloatingIsland(this, key, opts);
-      const tex = this.textures.get(key);
-      const src = tex.getSourceImage();
-      const img = this.add.image(x, y, key).setScale(P).setTint(0xeee8f8);
-      const parts = [img];
-      tex.customData.island.glints.forEach((g) => {
-        const sp = this.add.image(x + (g.x - src.width / 2) * P, y + (g.y - src.height / 2) * P, 'star_small')
-          .setTint(0x9dffd8).setBlendMode(ADD).setScale(0.1 * P).setAlpha(0);
-        this.tweens.add({ targets: sp, alpha: 0.9, scale: 0.18 * P, duration: 700, delay: rnd.between(0, 4000), hold: 150, yoyo: true, repeat: -1, repeatDelay: rnd.between(1500, 4000) });
-        parts.push(sp);
-      });
-      this.tweens.add({ targets: parts, y: `-=${3 * P}`, duration: 3400, delay, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
-      return { w: src.width * P, h: src.height * P };
-    };
-    // left: island with a tree and bushes, and a smaller grassy ledge below it
-    const L = sideIsland('menu_isle_left', { w: 84, depth: 62, seed: 3, trees: [22], bushes: [44, 64], moss: 0.18 },
-      Math.round(42 * P - 4 * P), Math.round(height * 0.44), 0);
-    sideIsland('menu_isle_ledge', { w: 34, depth: 20, seed: 8, bushes: [12], moss: 0.15 },
-      Math.round(L.w * 0.62), Math.round(height * 0.44 + L.h * 0.5 + 18 * P), 900);
-    // right: a taller cliff with foliage and mossy faces along the right edge
-    sideIsland('menu_isle_right', { w: 78, depth: 104, seed: 5, trees: [18, 50], bushes: [34, 66], moss: 0.32 },
-      Math.round(width - 39 * P + 6 * P), Math.round(height * 0.33), 1500);
+    // ── Midground: wide natural cliffs rising from the bottom clouds, left and right ──
+    const TOP = 34;                                      // rows above the grass for the trees
+    const rowsTo = (fy) => Math.ceil((height - height * fy) / P) + TOP;   // texture height for a grass line at fy
+    const leftH = rowsTo(0.48);
+    makeCliff(this, `menu_cliff_l_${leftH}`, {
+      w: 150, h: leftH, top: TOP, face: 'right', seed: 3,
+      faceAt: (r) => 128 + r * 0.06 + Math.sin(r / 13) * 3,
+      trees: [28, 92], shrubs: [12, 55, 112], flowers: [40, 68, 77, 103, 122],
+      vines: 8, vineFrom: 96, vineTo: 136, vineLen: 60,
+    });
+    this.add.image(0, height, `menu_cliff_l_${leftH}`).setOrigin(0, 1).setScale(P);
+    // right: taller, overhanging at the top, its face kept right of the distant castle
+    const rightH = rowsTo(0.2);
+    makeCliff(this, `menu_cliff_r_${rightH}`, {
+      w: 120, h: rightH, top: TOP, face: 'left', seed: 5,
+      faceAt: (r) => (r < 40 ? 6 + Math.sin(r / 9) * 2
+        : r < 90 ? 6 + 64 * (0.5 - 0.5 * Math.cos(((r - 40) / 50) * Math.PI))
+          : 70 + Math.sin(r / 12) * 2),
+      trees: [26, 80], shrubs: [12, 52, 102], flowers: [36, 62, 90, 112],
+      vines: 12, vineFrom: 8, vineTo: 72, vineLen: 46,
+    });
+    this.add.image(width, height, `menu_cliff_r_${rightH}`).setOrigin(1, 1).setScale(P);
+    // the cliffs' feet disappear into soft clouds
+    [['cloud_3', 0.07, 0.97, 1], ['cloud_1', 0.2, 1.01, 0.9], ['cloud_2', 0.97, 0.98, 0.9]].forEach(([key, fx, fy, s]) => {
+      const c = this.add.image(width * fx, height * fy, key).setScale(s * (height / 720)).setAlpha(0.92).setTint(0xf1e6ff);
+      this.tweens.add({ targets: c, x: c.x + rnd.between(-14, 14), duration: rnd.between(5000, 8000), yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    });
 
     // ── Layout (top → bottom): title, character on the centre island, Start ──
     const emblemKey = makeTitleEmblem(this);
