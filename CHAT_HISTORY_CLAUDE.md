@@ -2705,3 +2705,50 @@ All tests pass.
 - **Projects level:** the balloon and its "Grab the balloon" sign are gone, so there's no balloon at the Projects level any more.
 
 In a normal game (without "Keep exploring") nothing changed. All tests pass.
+
+
+---
+
+## Turn 48 — Keep exploring: balloons placed on PROJECTS, ending quote cleared
+
+### 👤 You
+
+> after she moving projetc like landing but ballons in that node and if keep exploring pushed delte the worl it is just begging form screen (if you see you are reaching session usage before finishing immdeitaely add chat to the chat claude)
+
+### 🤖 Claude (plan, written first as asked)
+
+Only after "Keep exploring":
+1. When she lands from the balloon ride down, she sets her balloons on the PROJECTS post, as she does at ACHIEVEMENTS, and they stay there.
+2. Clicking "Keep exploring" clears the quote "This is not the end of my journey. / It's just the beginning." from the screen.
+
+*(Result follows below.)*
+
+### 🤖 Claude (result)
+
+<details>
+<summary><b>Work done</b></summary>
+
+- **Balloons placed on PROJECTS (keep exploring):**
+  - after "Keep exploring", the ride down hands her balloons to the PROJECTS post (`rideDown.handoffTo = ride` in `GameScene.setExploring`)
+  - when she lands she bends down and her balloons glide from her hand onto the PROJECTS post, with the "Grab the balloon" sign, exactly like at ACHIEVEMENTS; the ACHIEVEMENTS post is left empty because she took those balloons
+  - the PROJECTS post is now treated like the ACHIEVEMENTS one (`ride.gated = true`): it only has balloons when she has left them there, so no extra balloon pops up
+  - she can ride them back up, and then they're at ACHIEVEMENTS and the PROJECTS post is empty again
+  - small fix in `BalloonRide.placeInto`: a gated post stays empty after she takes its balloons
+- **Quote cleared:** clicking "Keep exploring" (or Esc) now fades out "This is not the end of my journey. / It's just the beginning." and it stays gone (`end-hide-quote` class in `EndingPanel.js` / `ending.css`). "Play again" starts fresh as before.
+- **Unchanged:** a normal game without "Keep exploring".
+- **Files:** `src/scenes/GameScene.js`, `src/entities/BalloonRide.js`, `src/ui/EndingPanel.js`, `src/ui/ending.css`.
+- **Tests:**
+  - `explore` suite passes 15/15:
+    - quote gone
+    - balloons set on the PROJECTS post, and the ACHIEVEMENTS post left empty
+    - balloons waiting at PROJECTS, and she can ride them back up
+    - the "land on PROJECTS" hints from Turn 47 still pass
+  - ending, ride, ride-down and balloon placing suites pass
+
+</details>
+
+**Done:** after "Keep exploring":
+- **Balloons:** when she lands at Projects she sets her balloons on the Projects post, just like at Achievements. They wait there, and she can ride them back up.
+- **Quote:** "It's just the beginning" disappears from the screen as soon as Keep exploring is clicked.
+
+All tests pass.

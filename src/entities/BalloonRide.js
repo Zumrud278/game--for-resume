@@ -276,7 +276,8 @@ export class BalloonRide {
       },
       onComplete: () => {
         station.receive();                       // the same bouquet, now tied to the post
-        this.resetToPost(true);                  // this one goes back to its own post
+        if (this.gated) this.ready = false;      // a gated post stays empty: she took its balloons
+        this.resetToPost(true);                  // otherwise a fresh one appears on its own post
       },
     });
   }

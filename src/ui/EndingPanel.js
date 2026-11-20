@@ -116,6 +116,7 @@ export class EndingPanel {
   // "Keep exploring": hide the card, free the controls, keep a reopen button
   hideCard() {
     this.isOpen = false;
+    this.root.classList.add('end-hide-quote');     // the quote leaves the screen too
     this.onKeepExploring?.();
     this.root.classList.remove('end-show-card', 'end-show-veil');
     this.later(450, () => {

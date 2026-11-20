@@ -329,13 +329,19 @@ export class GameScene extends Phaser.Scene {
   /**
    * "Keep exploring" at the end: the way back down mirrors the way up —
    * holding the ACHIEVEMENTS balloon shows "Follow the stars ↓ · land on
-   * PROJECTS" and a "Land here" sign over PROJECTS — and the balloon by
-   * PROJECTS is put away (no balloon at the PROJECTS level any more).
+   * PROJECTS" and a "Land here" sign over PROJECTS. The balloon that was
+   * waiting by PROJECTS is put away; when she lands there she sets her own
+   * balloons on the PROJECTS post instead (and can ride them up again).
    */
   setExploring() {
     if (this.exploring) return;
     this.exploring = true;
     this.ride.hide();
+    // From now on the balloons travel with her both ways: landing at PROJECTS
+    // she sets them on the PROJECTS post (like at ACHIEVEMENTS), and each post
+    // only has balloons when she has left them there
+    this.ride.gated = true;
+    this.rideDown.handoffTo = this.ride;
   }
 
   // The small node card goes away as soon as she steps off its node
