@@ -2158,3 +2158,43 @@ The title, the girl on the centre island and the Start button have not moved. Al
 - Leave her alone and she sometimes glances around or hops on her own.
 
 Everything else is unchanged and all tests pass.
+
+
+---
+
+## Turn 34 — "Zumrud's World", the girl only blinks, the original Start button
+
+### 👤 You
+
+> I dont like the interaction of the charater in the start page so just make her blinking do not move her and change name to the Zumrud's World too chnage the start button use the the prevous version (the version before we made all these changes)
+
+<details>
+<summary><b>Work done</b></summary>
+
+- **Girl (`createGirl` in `src/scenes/MenuScene.js`):**
+  - removed the hover hop, click cheer, looking toward the mouse, breathing and the moves she made on her own
+  - she now stands completely still in the same spot and only blinks, every 2–5 seconds and sometimes twice, using the closed-eye frame at her start-screen size
+  - no hand cursor over her, and clicking her does nothing
+- **Title:** "Emerald" changed to "Zumrud's", so it reads "Zumrud's" over "World" with the same gold Baroque ornament and crown. `makeEmeraldIsland` is renamed `makeCentreIsland`.
+- **Start button:** restored exactly as it was before the redesign:
+  - `assets/ui/start.png` at 0.85 scale, centred at 82% of the screen height
+  - the gentle pulse (0.85 ↔ 0.9, 800ms)
+  - the hand cursor and the same click handler (fade, then the game starts)
+  - the generated pixel button and its helpers (`makeStartButton`, `goldStroke`, `spiralPath`) were deleted from `pixelArt.js`
+- **Unchanged:** sky, moon, castle, side islands, centre island, and her position (feet 427).
+- **Tests:**
+  - start-screen suite passes 8/8:
+    - she blinks but never moves or turns, through mouse moves, hover and click
+    - the original button pulses at 82% height and starts the game
+  - layout check passes 31/31 at six 16:9 sizes
+
+</details>
+
+### 🤖 Claude
+
+**Done:**
+- **The girl:** stands completely still and only blinks. There are no more hops, turning or reactions, and clicking her does nothing.
+- **The title:** now reads "Zumrud's World", with the same gold ornament and crown.
+- **Start button:** back to the original one, with its gentle pulse, in its original spot. Clicking it starts the game as before.
+
+Everything else is unchanged, and all tests pass.

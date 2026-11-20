@@ -1,19 +1,18 @@
 import Phaser from 'phaser';
 import { COLORS } from '../utils/constants.js';
 import {
-  makeTitleEmblem, makeEmeraldIsland, makeStartButton, makeMoon, makePixelStar, makeSpark4,
+  makeTitleEmblem, makeCentreIsland, makeMoon, makePixelStar, makeSpark4,
 } from '../effects/pixelArt.js';
 
 /**
  * Start screen — a centred, layered pixel-art fantasy composition (16:9):
  *   sky:     twilight gradient, twinkling stars, a few clouds, white crescent
  *            moon on the left, misty mountains and the distant castle below
- *   top:     "Emerald / World" title in an open gold filigree frame
+ *   top:     "Zumrud's / World" title with gold Baroque ornament and a crown
  *   sides:   smaller floating islands from the game itself framing the view
- *   centre:  the girl standing on a wide floating island with vines and
- *            wildflowers — she blinks, breathes, looks toward the pointer,
- *            and reacts when hovered or clicked
- *   bottom:  ONE Start button over the island's rocky underside
+ *   centre:  the girl standing still on a wide floating island with vines
+ *            and wildflowers — she only blinks
+ *   bottom:  the original Start button (assets/ui/start.png, gently pulsing)
  * All pixel art is generated in src/effects/pixelArt.js and shown at a
  * whole-number scale with NEAREST filtering (crisp, pixelated).
  */
@@ -56,7 +55,7 @@ export class MenuScene extends Phaser.Scene {
     return key;
   }
 
-  // Soft round light (drawn additively), in emerald / gold / white
+  // Soft round light (drawn additively), in gold / white
   static glow(scene, name, inner, outer) {
     const key = `menu_glow_${name}`;
     if (scene.textures.exists(key)) return key;
@@ -75,7 +74,7 @@ export class MenuScene extends Phaser.Scene {
 
   create() {
     const { width, height } = this.cameras.main;
-    const rnd = new Phaser.Math.RandomDataGenerator(['emerald-world']);
+    const rnd = new Phaser.Math.RandomDataGenerator(['zumruds-world']);
     const ADD = Phaser.BlendModes.ADD;
 
     // The view follows the window shape — re-lay out the start screen on resize
@@ -163,17 +162,12 @@ export class MenuScene extends Phaser.Scene {
     const charTex = this.textures.get('idle_menu').getSourceImage();
     const charH = charTex.height * charScale;
 
-    const islandKey = makeEmeraldIsland(this);
+    const islandKey = makeCentreIsland(this);
     const islandTex = this.textures.get(islandKey).getSourceImage();
     const islandInfo = this.textures.get(islandKey).customData.island;
 
-    const btnKey = makeStartButton(this);
-    const btnTex = this.textures.get(btnKey).getSourceImage();
-    const btnH = btnTex.height * P;
-
     const grassY = Math.round(Math.max(height * 0.57, emY + emH / 2 + height * 0.05 + charH));
     const islandTop = grassY - islandInfo.grassY * P;
-    const btnY = Math.round(Math.min(grassY + 86 * P, height * 0.965 - btnH / 2));
 
     // ── Title emblem (no box behind it — just a soft gold glow) ──
     const emGlow = this.add.image(cx, emY, glowGold).setBlendMode(ADD).setDisplaySize(emW * 1.1, emH * 1.15).setAlpha(0.2);
@@ -194,8 +188,8 @@ export class MenuScene extends Phaser.Scene {
     // ── Centre island ──
     this.add.image(cx, islandTop, islandKey).setOrigin(0.5, 0).setScale(P);
 
-    // ── The girl, standing on the grass in the middle of the island ──
-    const character = this.createGirl(cx, grassY + P, charScale, charTex.width * charScale, height / 720);
+    // ── The girl, standing still on the grass in the middle of the island ──
+    const character = this.createGirl(cx, grassY + P, charScale);
 
     // Starlight / firefly motes drifting around the island
     this.add.particles(0, 0, 'star_small', {
@@ -208,20 +202,19 @@ export class MenuScene extends Phaser.Scene {
       lifespan: 3200, frequency: 220, blendMode: 'ADD',
     });
 
-    // ── The single Start button, over the island's rocky underside ──
-    const btnGlow = this.add.image(0, 0, glowGold).setBlendMode(ADD)
-      .setDisplaySize(btnTex.width * P * 1.15, btnH * 1.6).setAlpha(0.18);
-    const startBtn = this.add.image(0, 0, btnKey).setScale(P).setInteractive({ useHandCursor: true });
-    const button = this.add.container(cx, btnY, [btnGlow, startBtn]);
+    // ── Start button (the original one) ──
+    const startBtn = this.add.image(width / 2, height * 0.82, 'start')
+      .setScale(0.85)
+      .setInteractive({ useHandCursor: true });
 
-    // Hover: a little bigger, with a brighter glow
-    startBtn.on('pointerover', () => {
-      this.tweens.add({ targets: button, scale: 1.06, duration: 160, ease: 'Sine.easeOut' });
-      this.tweens.add({ targets: btnGlow, alpha: 0.5, duration: 160 });
-    });
-    startBtn.on('pointerout', () => {
-      this.tweens.add({ targets: button, scale: 1, duration: 160, ease: 'Sine.easeOut' });
-      this.tweens.add({ targets: btnGlow, alpha: 0.18, duration: 160 });
+    this.tweens.add({
+      targets: startBtn,
+      scaleX: 0.9,
+      scaleY: 0.9,
+      duration: 800,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.easeInOut',
     });
 
     startBtn.on('pointerdown', () => {
@@ -230,6 +223,7 @@ export class MenuScene extends Phaser.Scene {
         this.scene.start('Game');
       });
     });
+    const btnH = startBtn.height * 0.85;
 
     // Where everything landed (used by the layout checks)
     this.layoutInfo = {
@@ -237,74 +231,22 @@ export class MenuScene extends Phaser.Scene {
       crest: { top: emY - emH / 2 - 2 * P, bottom: emY + emH / 2, left: cx - emW / 2, right: cx + emW / 2 },
       character: { top: character.y - charH * character.originY, bottom: character.y },
       island: { top: islandTop, bottom: islandTop + islandTex.height * P, grassY },
-      button: { top: btnY - btnH / 2, bottom: btnY + btnH / 2, y: btnY },
+      button: { top: startBtn.y - btnH / 2, bottom: startBtn.y + btnH / 2, y: startBtn.y },
     };
   }
 
   /**
-   * The girl on the start screen, with a little life of her own:
-   *  - blinks every few seconds (sometimes twice), breathes gently
-   *  - turns to look toward the mouse pointer
-   *  - hover over her → a happy little hop with sparkles
-   *  - click her → she cheers (celebrate pose, bigger hop, sparkle burst)
-   *  - left alone for a while, she glances around or hops on her own
-   * Her frames are pre-drawn at their screen size, so she stays crisp.
+   * The girl on the start screen: she stands still and only blinks — every
+   * 2–5 s, sometimes twice. The closed-eye frame is pre-drawn at her
+   * start-screen size (BootScene), so she stays crisp and never shifts.
    */
-  createGirl(x, feetY, scale, width, u) {
-    const POSES = {                       // texture → [torso anchor x, feet y] (fractions of the frame)
-      idle_menu: [0.645, 201 / 203],
-      idle_blink_menu: [0.645, 201 / 203],
-      celebrate_menu: [0.63, 208 / 210],
-    };
-    const baseX = Math.round(x + (POSES.idle_menu[0] - 0.5) * width);   // same spot as before, anchored at her torso
-    const girl = this.add.image(baseX, feetY, 'idle_menu').setScale(scale);
-    const st = { hop: 0, breath: 0, busy: false, facing: 1, pose: 'idle_menu', lastPointer: 0 };
+  createGirl(x, feetY, scale) {
+    const girl = this.add.image(x, feetY, 'idle_menu').setOrigin(0.5, 201 / 203).setScale(scale);
+    if (!this.textures.exists('idle_blink_menu')) return girl;
     const rnd = new Phaser.Math.RandomDataGenerator(['girl']);
-
-    const setPose = (key) => {
-      if (!this.textures.exists(key)) return;
-      st.pose = key;
-      const [ax, fy] = POSES[key];
-      girl.setTexture(key).setFlipX(st.facing < 0).setOrigin(st.facing < 0 ? 1 - ax : ax, fy);
-    };
-    const face = (dir) => {
-      if (dir === st.facing) return;
-      st.facing = dir;
-      setPose(st.pose);
-    };
-    setPose('idle_menu');
-
-    // Breathing (1px) and hops move her; her feet return to the grass every time
-    this.tweens.add({ targets: st, breath: 1, duration: 1400, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
-    const place = () => girl.setPosition(baseX, Math.round(feetY - st.hop - (st.breath > 0.6 ? Math.max(1, scale) : 0)));
-    this.events.on(Phaser.Scenes.Events.UPDATE, place);
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.events.off(Phaser.Scenes.Events.UPDATE, place));
-
-    const sparkle = (n, spread) => {
-      const e = this.add.particles(girl.x, girl.y - girl.displayHeight * 0.7, 'star_small', {
-        speed: { min: 50 * u, max: spread * u },
-        angle: { min: 200, max: 340 },
-        scale: { start: 0.32 * u, end: 0 },
-        alpha: { start: 1, end: 0 },
-        lifespan: 750,
-        gravityY: 140,
-        tint: [0xffd700, 0xffffff, 0xff9de0, 0xc9a0dc],
-        emitting: false,
-      });
-      e.explode(n);
-      this.time.delayedCall(900, () => e.destroy());
-    };
-    const hop = (h, ms) => {
-      this.tweens.killTweensOf(st, ['hop']);
-      st.hop = 0;
-      this.tweens.add({ targets: st, hop: h * u, duration: ms, yoyo: true, ease: 'Quad.easeOut' });
-    };
-
-    // Blinking: every 2–5 s, sometimes a double blink
     const blinkOnce = () => {
-      if (st.pose !== 'idle_menu' || st.busy) return;
-      setPose('idle_blink_menu');
-      this.time.delayedCall(130, () => { if (st.pose === 'idle_blink_menu') setPose('idle_menu'); });
+      girl.setTexture('idle_blink_menu');
+      this.time.delayedCall(130, () => girl.setTexture('idle_menu'));
     };
     const scheduleBlink = () => {
       this.time.delayedCall(rnd.between(2000, 4800), () => {
@@ -315,46 +257,6 @@ export class MenuScene extends Phaser.Scene {
     };
     this.time.delayedCall(900, blinkOnce);
     scheduleBlink();
-
-    // She looks toward the pointer
-    this.input.on('pointermove', (p) => {
-      st.lastPointer = this.time.now;
-      if (st.busy) return;
-      const dx = p.x - girl.x;
-      if (Math.abs(dx) > 50 * u) face(dx < 0 ? -1 : 1);
-    });
-
-    // Hover → happy hop; click → cheer
-    girl.setInteractive({ useHandCursor: true, pixelPerfect: true, alphaTolerance: 40 });
-    let hoverReady = 0;
-    girl.on('pointerover', () => {
-      if (st.busy || this.time.now < hoverReady) return;
-      hoverReady = this.time.now + 1400;
-      hop(9, 160);
-      sparkle(6, 120);
-      this.events.emit('girl-react', 'hover');
-    });
-    girl.on('pointerdown', () => {
-      if (st.busy) return;
-      st.busy = true;
-      setPose('celebrate_menu');
-      hop(18, 220);
-      sparkle(16, 200);
-      this.events.emit('girl-react', 'cheer');
-      this.time.delayedCall(1100, () => { st.busy = false; setPose('idle_menu'); });
-    });
-
-    // Left alone for a while: glance around, or a little hop
-    this.time.addEvent({
-      delay: 6500,
-      loop: true,
-      callback: () => {
-        if (st.busy || this.time.now - st.lastPointer < 4000) return;
-        if (rnd.frac() < 0.6) face(-st.facing); else { hop(6, 150); }
-      },
-    });
-
-    girl.lifeState = st;      // for checks
     return girl;
   }
 }

@@ -1,10 +1,10 @@
 import Phaser from 'phaser';
 
 /**
- * Pixel-art generators for the start screen: the "Emerald / World" title
+ * Pixel-art generators for the start screen: the "Zumrud's / World" title
  * emblem with its gold Baroque ornament and crown, the decorated centre
  * island, the crescent moon,
- * four-point sparkles and the Start button. Everything is
+ * and four-point sparkles. Everything is
  * drawn pixel by pixel at low resolution and shown at a whole-number scale
  * with NEAREST filtering, so every art pixel stays a crisp square.
  */
@@ -132,33 +132,6 @@ export function makePixelStar(scene, key = 'px_star') {
   return key;
 }
 
-// ── Gold filigree helpers ──
-/** Strokes `draw` into a hard 1–2px line mask and paints it as bevelled gold (lit from above). */
-function goldStroke(pc, draw) {
-  const m = makeMask(pc.w, pc.h, (ctx) => { ctx.strokeStyle = '#fff'; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; draw(ctx); }, 90);
-  const set = new Set();
-  for (let i = 0; i < m.length; i++) if (m[i]) set.add(i);
-  set.forEach((i) => {
-    const x = i % pc.w, y = (i / pc.w) | 0;
-    const up = set.has(i - pc.w), down = set.has(i + pc.w);
-    pc.set(x, y, !up ? GOLD.hi : !down ? GOLD.dark : GOLD.light);
-  });
-  return set;
-}
-
-function spiralPath(ctx, cx, cy, r0, turns, start, dir = 1) {
-  ctx.beginPath();
-  const steps = 60;
-  for (let k = 0; k <= steps; k++) {
-    const t = k / steps;
-    const a = start + dir * t * turns * Math.PI * 2;
-    const r = r0 * (1 - t * 0.8);
-    const x = cx + Math.cos(a) * r, y = cy + Math.sin(a) * r;
-    if (k) ctx.lineTo(x, y); else ctx.moveTo(x, y);
-  }
-  ctx.stroke();
-}
-
 // Four-point star sparkle
 const SPARK4 = ['...a...', '...b...', '..bWb..', 'abWWWba', '..bWb..', '...b...', '...a...'];
 const SPARK_PAL = { a: '#fff1b0', b: '#ffe27a', W: '#ffffff' };
@@ -201,7 +174,7 @@ function paintTitle(pc, g, ox, oy) {
   });
 }
 
-// ── Title emblem: "Emerald" / "World" with transparent gold Baroque ornament ──
+// ── Title emblem: "Zumrud's" / "World" with transparent gold Baroque ornament ──
 /** Tapered stroke through `pts` (width w0 → w1), round caps so it stays smooth. */
 function taper(ctx, pts, w0, w1) {
   ctx.lineCap = 'round';
@@ -251,7 +224,7 @@ function paintGold(pc, set) {
 export function makeTitleEmblem(scene, key = 'menu_emblem') {
   if (scene.textures.exists(key)) return key;
   const FONT = 'bold 27px Georgia, "Times New Roman", serif';
-  const l1 = glyphMask('Emerald', FONT);
+  const l1 = glyphMask("Zumrud's", FONT);
   const l2 = glyphMask('World', FONT);
   const GAP = 5, SIDE = 44, CROWN = 28, SWASH = 16;
   const textW = Math.max(l1.tw, l2.tw);
@@ -328,90 +301,6 @@ export function makeTitleEmblem(scene, key = 'menu_emblem') {
   return key;
 }
 
-// ── Pixel-art Start button: purple pill, gold bevel, side scrollwork and gems, star + "Start" ──
-export function makeStartButton(scene, key = 'menu_start') {
-  if (scene.textures.exists(key)) return key;
-  const W = 132, H = 38;
-  const pc = new PixelCanvas(W, H);
-  const bx0 = 16, bx1 = W - 17, by0 = 5, by1 = H - 6;
-  const pill = makeMask(W, H, (ctx) => {
-    const r = (by1 - by0) / 2;
-    ctx.beginPath();
-    ctx.moveTo(bx0 + r, by0); ctx.lineTo(bx1 - r, by0);
-    ctx.arc(bx1 - r, by0 + r, r, -Math.PI / 2, Math.PI / 2);
-    ctx.lineTo(bx0 + r, by1);
-    ctx.arc(bx0 + r, by0 + r, r, Math.PI / 2, Math.PI * 1.5);
-    ctx.fill();
-  });
-  const depth = new Uint8Array(W * H);
-  let cur = pill.slice();
-  for (let d = 1; d <= 4; d++) {
-    const next = new Uint8Array(W * H);
-    for (let i = 0; i < W * H; i++) {
-      if (!cur[i]) continue;
-      if (cur[i - 1] && cur[i + 1] && cur[i - W] && cur[i + W]) next[i] = 1; else depth[i] = d;
-    }
-    cur = next;
-  }
-  const body = new Set();
-  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-    const i = y * W + x;
-    if (!pill[i]) continue;
-    body.add(i);
-    const d = depth[i] || 5;
-    const f = (y - by0) / (by1 - by0);
-    let c;
-    if (d === 1) c = f < 0.5 ? GOLD.hi : GOLD.mid;
-    else if (d === 2) c = f < 0.5 ? GOLD.light : GOLD.dark;
-    else if (d === 3) c = '#2e1660';
-    else c = f < 0.18 ? '#a374ec' : f < 0.5 ? '#7e48d0' : f < 0.8 ? '#6334b4' : '#4c2394';
-    pc.set(x, y, c);
-  }
-  pc.outlineMask(body, '#1a0f2e');
-
-  // Side scrollwork and gems
-  const gold = goldStroke(pc, (ctx) => {
-    ctx.lineWidth = 1.6;
-    [[bx0, -1], [bx1, 1]].forEach(([ex, s]) => {
-      [-1, 1].forEach((v) => {
-        ctx.beginPath();
-        ctx.moveTo(ex + s * 2, H / 2);
-        ctx.bezierCurveTo(ex + s * 7, H / 2 + v * 4, ex + s * 9, H / 2 + v * 10, ex + s * 5, H / 2 + v * 13);
-        ctx.stroke();
-        spiralPath(ctx, ex + s * 7, H / 2 + v * 14, 2.8, 0.8, Math.PI, s * v);
-      });
-    });
-  });
-  pc.outlineMask(gold, '#1a0f2e');
-
-  // Star icon
-  const sx = 36, sy = H / 2;
-  const star = makeMask(W, H, (ctx) => {
-    ctx.beginPath();
-    for (let k = 0; k < 10; k++) {
-      const r = k % 2 ? 2.6 : 6.2, a = -Math.PI / 2 + (k * Math.PI) / 5;
-      const x = sx + Math.cos(a) * r, y = sy + Math.sin(a) * r;
-      if (k) ctx.lineTo(x, y); else ctx.moveTo(x, y);
-    }
-    ctx.closePath(); ctx.fill();
-  }, 100);
-  const starSet = new Set();
-  for (let i = 0; i < star.length; i++) if (star[i]) starSet.add(i);
-  starSet.forEach((i) => { const y = (i / W) | 0; pc.set(i % W, y, y < sy - 1 ? '#fff4a8' : y < sy + 2 ? '#ffd040' : '#f0a020'); });
-  pc.outlineMask(starSet, '#5a3410');
-
-  // "Start" in crisp white pixels
-  const g = glyphMask('Start', 'bold 17px "Trebuchet MS", Verdana, Arial, sans-serif');
-  const ox = Math.round((sx + 10 + bx1 - 8) / 2 - g.tw / 2), oy = Math.round(H / 2 - g.th / 2);
-  const txt = new Set();
-  for (let y = 0; y < g.th; y++) for (let x = 0; x < g.tw; x++) if (g.m[(y + g.y0) * g.w + x + g.x0]) txt.add((oy + y) * W + ox + x);
-  txt.forEach((i) => { const x = i % W, y = (i / W) | 0; if (!txt.has((y + 1) * W + x)) pc.set(x, y + 1, '#2a1260'); });
-  txt.forEach((i) => pc.set(i % W, (i / W) | 0, '#ffffff'));
-
-  pc.toTexture(scene, key);
-  return key;
-}
-
 // ── White crescent moon ──
 export function makeMoon(scene, key = 'menu_moon') {
   if (scene.textures.exists(key)) return key;
@@ -432,7 +321,7 @@ export function makeMoon(scene, key = 'menu_moon') {
 
 // ── Centre island: the START island art with hanging vines and wildflowers ──
 export const ISLAND_EXTRA = 30;     // rows added below the art for hanging vines
-export function makeEmeraldIsland(scene, key = 'menu_island') {
+export function makeCentreIsland(scene, key = 'menu_island') {
   if (scene.textures.exists(key)) return key;
   const src = scene.textures.get('island').getSourceImage();
   const W = src.width, H = src.height + ISLAND_EXTRA;
