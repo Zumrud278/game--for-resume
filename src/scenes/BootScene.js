@@ -11,9 +11,6 @@ const CHARACTER_KEYS = ['idle', 'jump', 'fall', 'land', 'celebrate', 'float', 'r
  * then a soft closed-lid curve is drawn, like her closed eyes in other poses.
  * Coordinates are in the original idle.png (139×203).
  */
-// Height of the girl on the start screen (px at the 720p view; she stands on the centre island)
-export const START_GIRL_HEIGHT = 162;
-
 function makeBlinkTexture(scene) {
   const src = scene.textures.get('idle').getSourceImage();
   const c = document.createElement('canvas');
@@ -101,7 +98,6 @@ export class BootScene extends Phaser.Scene {
 
     // ── Characters ──
     this.load.image('idle', 'assets/characters/idle.png');
-    this.load.image('start_girl', 'assets/characters/start-girl.png');   // start-screen portrait
     // Individual run frames (run.png is 433px wide, which doesn't split evenly)
     this.load.image('run_1', 'assets/characters/frames/run_1.png');
     this.load.image('run_2', 'assets/characters/frames/run_2.png');
@@ -158,14 +154,8 @@ export class BootScene extends Phaser.Scene {
 
     // Character: every pose drawn once at its exact in-game size, so she's
     // rendered 1:1 — her eyes and fine details stay stable while she moves
-    // Start-screen girl: her own picture (start-girl.png — feet at the bottom,
-    // boots centred), drawn once at her start-screen height so she stays crisp
-    if (!this.missing.includes('start_girl')) {
-      const h = this.textures.get('start_girl').getSourceImage().height;
-      prescaleTexture(this, 'start_girl', START_GIRL_HEIGHT / h, 'girl_menu');
-    } else {
-      prescaleTexture(this, 'idle', 0.75, 'girl_menu');
-    }
+    // Start-screen girl: her original standing picture, drawn once at 0.75 of the art
+    prescaleTexture(this, 'idle', 0.75, 'girl_menu');
     // Blink frame (eyes closed) for her idle life on the rainbow island
     if (!this.missing.includes('idle')) {
       makeBlinkTexture(this);

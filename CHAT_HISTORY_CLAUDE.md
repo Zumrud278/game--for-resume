@@ -2304,3 +2304,44 @@ Everything else on the page is unchanged, and the character inside the game stil
 **Done:** "Follow the stars ↑" now appears the moment she grabs the balloon at Projects. It pops in at the top of the screen with a little bounce, the glowing star coins light up along the balloon's path through the sky, and it all disappears when she lands on Achievements.
 
 It no longer shows while she's walking from Skills. The "↓" hint on the way back down is unchanged, and all tests pass.
+
+
+---
+
+## Turn 38 — Original girl back on the start page; Start button settled into the scene
+
+### 👤 You
+
+> chnage the main girl in the start page and put the previous girl (before we start chnages girl) and adjust start button by making it more appropriate to the game strat page
+
+<details>
+<summary><b>Work done</b></summary>
+
+- **Girl (`BootScene.js`, `MenuScene.js`):**
+  - the start screen uses her original standing picture again: `idle.png` drawn once at 0.75, as at the very beginning of the project, with no painted hands and no blinking
+  - she stands still on the centre island in the same spot (feet 427)
+  - `start-girl.png` is no longer loaded; the file stays in the repo, unused
+- **Start button (`MenuScene.js`):**
+  - **Art:** same original image (`assets/ui/start.png`), drawn slightly smaller (0.8 instead of the pulsing 0.85–0.9) at 83% of the screen height, centred on the island's rock below her.
+  - **Settled into the scene:** a soft dark shadow on the rock under it, and a warm gold glow behind it that gently breathes instead of the whole button bouncing.
+  - **Hover:** grows a little (to 0.848) and the glow brightens and widens. Moving away settles it back.
+  - **Click:** a quick press-in, then the same fade-out and start of the game as before.
+- **Unchanged:** title, sky, moon, castle, side islands, centre island.
+- **Tests:**
+  - start-screen suite passes 9/9:
+    - original girl picture (104×152), never moves
+    - one Start button at rest on the rock, grows on hover, starts the game
+  - layout check passes 31/31
+
+</details>
+
+### 🤖 Claude
+
+**Done:**
+- **The girl:** the start page shows her original standing picture again, standing still on the centre island.
+- **Start button:** same original button, now settled into the page:
+  - it's a little smaller and sits on the island's rock with a soft shadow under it
+  - a warm gold glow behind it gently breathes, instead of the whole button bouncing
+  - hovering makes it grow slightly and glow brighter, and clicking gives it a little press before the game starts
+
+Everything else is unchanged, and all tests pass.

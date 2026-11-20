@@ -203,28 +203,41 @@ export class MenuScene extends Phaser.Scene {
       lifespan: 3200, frequency: 220, blendMode: 'ADD',
     });
 
-    // ── Start button (the original one) ──
-    const startBtn = this.add.image(width / 2, height * 0.82, 'start')
-      .setScale(0.85)
+    // ── Start button (the original art), settled into the scene ──
+    // Sits on the island's rock with a soft shadow and a warm gold glow that
+    // gently breathes; on hover it grows a little and glows brighter, and it
+    // presses in when clicked.
+    const BTN_SCALE = 0.8 * (height / 720);
+    const btnX = Math.round(width / 2), btnY = Math.round(height * 0.83);
+    const btnW = this.textures.get('start').getSourceImage().width * BTN_SCALE;
+    const btnH = this.textures.get('start').getSourceImage().height * BTN_SCALE;
+    this.add.ellipse(btnX, btnY + btnH * 0.42, btnW * 0.78, btnH * 0.28, 0x1a0b2e, 0.45);
+    const btnGlow = this.add.image(btnX, btnY, glowGold).setBlendMode(ADD)
+      .setDisplaySize(btnW * 1.35, btnH * 1.9).setAlpha(0.22);
+    const glowSX = btnGlow.scaleX, glowSY = btnGlow.scaleY;
+    this.tweens.add({ targets: btnGlow, alpha: 0.4, duration: 1600, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    const startBtn = this.add.image(btnX, btnY, 'start')
+      .setScale(BTN_SCALE)
       .setInteractive({ useHandCursor: true });
 
-    this.tweens.add({
-      targets: startBtn,
-      scaleX: 0.9,
-      scaleY: 0.9,
-      duration: 800,
-      yoyo: true,
-      repeat: -1,
-      ease: 'Sine.easeInOut',
+    startBtn.on('pointerover', () => {
+      this.tweens.add({ targets: startBtn, scale: BTN_SCALE * 1.06, duration: 160, ease: 'Sine.easeOut' });
+      this.tweens.add({ targets: btnGlow, scaleX: glowSX * 1.12, scaleY: glowSY * 1.12, duration: 160 });
+      btnGlow.setTint(0xfff0c0);
+    });
+    startBtn.on('pointerout', () => {
+      this.tweens.add({ targets: startBtn, scale: BTN_SCALE, duration: 160, ease: 'Sine.easeOut' });
+      this.tweens.add({ targets: btnGlow, scaleX: glowSX, scaleY: glowSY, duration: 160 });
+      btnGlow.clearTint();
     });
 
     startBtn.on('pointerdown', () => {
+      this.tweens.add({ targets: startBtn, scale: BTN_SCALE * 0.96, duration: 80, yoyo: true });
       this.cameras.main.fadeOut(400, 45, 27, 78);
       this.time.delayedCall(400, () => {
         this.scene.start('Game');
       });
     });
-    const btnH = startBtn.height * 0.85;
 
     // Where everything landed (used by the layout checks)
     this.layoutInfo = {
@@ -237,12 +250,11 @@ export class MenuScene extends Phaser.Scene {
   }
 
   /**
-   * The girl on the start screen (assets/characters/start-girl.png): standing
-   * still on the grass in the middle of the island — her boots are centred in
-   * the picture and its bottom edge is the soles of her boots. Pre-drawn at its
+   * The girl on the start screen: her original standing picture (idle.png),
+   * still on the grass in the middle of the island. Pre-drawn at its
    * start-screen size (BootScene), so she stays crisp.
    */
   createGirl(x, feetY, scale) {
-    return this.add.image(x, feetY, 'girl_menu').setOrigin(0.5, 1).setScale(scale);
+    return this.add.image(x, feetY, 'girl_menu').setOrigin(0.5, 201 / 203).setScale(scale);
   }
 }
