@@ -1750,3 +1750,27 @@ The game already works this way, so I didn't change anything.
 - **No balloons:** nothing flies her to the rainbow. The only balloon on ACHIEVEMENTS is the optional "Ride down" back to PROJECTS.
 
 I tested it locally and on your live GitHub Pages site: 13/13 checks passed, with her walking and jumping all the way. If you still see the old balloon flight, your browser has an old copy; press **Ctrl+F5** to reload.
+
+
+---
+
+## Turn 25 — A smaller, more compact Skills node
+
+### 👤 You
+
+> Make the Skills node smaller and more compact so its entire bottom section is visible within the game screen. Keep the existing design and style.
+
+<details>
+<summary><b>Work done</b></summary>
+
+- **Measured with her standing on SKILLS:** the island's bottom tip was at y=676 on a 720px screen, hidden behind the controls bar (Education is at 647 after its shrink).
+- **Change:** in `src/utils/constants.js`, the SKILLS scale went from 2.5 to 2.15 (about 14% smaller). It's the same artwork, polished and drawn 1:1.
+- **Result:** the bottom tip is now at y=644, fully visible. The node is 268×245 instead of 311×284, and its walkable top is 205px wide.
+- **Unchanged:** the node's position. Both bridges simply reach about 17px further to meet it.
+- **Tests:** all 9 suites passed (178 checks). One check in the rainbow test had used the SKILLS→PROJECTS edge gap as its reference; it now compares against the designed 900px gap.
+
+</details>
+
+### 🤖 Claude
+
+I made the Skills node about 14% smaller. Its whole bottom tip now shows above the controls bar, the same way Education does. It uses the same island art and style and sits in the same place; the bridges just reach a little further to meet it. All 9 test suites passed (178 checks). Nothing is committed.
