@@ -4,13 +4,33 @@ import { DESTINATION, ISLANDS } from '../utils/constants.js';
 
 // No rainbow, flower or platform images exist in assets/, so those are drawn
 // with Phaser graphics. The castle island and clouds are your real assets.
-const RAINBOW = [0xff6b6b, 0xffa94d, 0xffe066, 0x8ce99a, 0x74c0fc, 0x9775fa, 0xe599f7];
+// ── OLD RAINBOW — to switch back:
+//    1. uncomment RAINBOW (below), the `this.arc = scene.add.graphics()…` line in
+//       the constructor, the old draw() and the old alpha pulse in reveal()
+//    2. comment out the moonbow lines in the constructor (revealShape / arc image /
+//       shimmer), the moonbow draw() and its pulse in reveal()
+//    (moonbowTexture / shimmerTexture / updateShimmer can stay — unused they do nothing) ──
+// const RAINBOW = [0xff6b6b, 0xffa94d, 0xffe066, 0x8ce99a, 0x74c0fc, 0x9775fa, 0xe599f7];
+
+// ── MOONBOW: a pale rainbow made by moonlight — silver, lavender, icy blue.
+//    Same position and size as the rainbow (7 bands, same radius). ──
+const MOONBOW = [               // [colour, opacity], outer → inner
+  [0xe6e1ff, 0.42],             // silver-lavender
+  [0xd4c8ff, 0.48],             // lavender
+  [0xc3b8f5, 0.52],             // soft violet-lavender
+  [0xf4f6ff, 0.64],             // moonlit silver (brightest band)
+  [0xc8e6ff, 0.56],             // icy blue
+  [0xa9d2ff, 0.48],             // deeper icy blue
+  [0xbcaee8, 0.36],             // lavender fading inward
+];
+const SHIMMER_MS = 7000;        // one slow pass of light along the moonbow
 const OUTER_R = 340;
 const BAND = 17;
 const FLOWER_COLORS = { pink: 0xff8fc8, purple: 0xb57bff, yellow: 0xffe066, white: 0xfff4fb };
 
 /**
- * The final destination: a small castle island under a large rainbow,
+ * The final destination: a small castle island under a large moonbow
+ * (a pale night rainbow — the old colourful rainbow is kept commented out),
  * with flowers, a glowing landing platform, clouds, stars and a
  * purple-pink magical glow.
  */
@@ -29,7 +49,19 @@ export class RainbowDestination {
       .setDepth(0)
       .setAlpha(0);
 
-    this.arc = scene.add.graphics().setDepth(1).setAlpha(0.92);
+    // this.arc = scene.add.graphics().setDepth(1).setAlpha(0.92);   // OLD RAINBOW
+    // Moonbow: one smooth picture (bands + soft glow), swept into view through
+    // a mask, with a soft light gliding along it (the shimmer)
+    this.revealShape = scene.make.graphics({ x: 0, y: 0 }, false);
+    const reveal = this.revealShape.createGeometryMask();
+    this.arc = scene.add.image(this.cx, this.cy, RainbowDestination.moonbowTexture(scene))
+      .setDepth(1).setAlpha(0.9).setMask(reveal);
+    const shimmerKey = RainbowDestination.shimmerTexture(scene);
+    this.shimmer = shimmerKey
+      ? scene.add.image(this.cx, this.cy, shimmerKey).setDepth(1).setBlendMode(Phaser.BlendModes.ADD).setAlpha(0).setMask(reveal)
+      : null;
+    scene.events.on(Phaser.Scenes.Events.UPDATE, this.updateShimmer, this);
+    scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => scene.events.off(Phaser.Scenes.Events.UPDATE, this.updateShimmer, this));
 
     // Clouds: big puffs hiding the rainbow's feet + soft pink mist around
     this.puffs = [-1, 1].map((side) =>
@@ -182,18 +214,102 @@ export class RainbowDestination {
     return key;
   }
 
-  // Draw the arc from its left foot up and over to `progress` (0–1)
+  // ── OLD RAINBOW draw() ──
+  // // Draw the arc from its left foot up and over to `progress` (0–1)
+  // draw() {
+  //   const g = this.arc;
+  //   g.clear();
+  //   if (this.progress <= 0) return;
+  //   const end = Math.PI + Math.PI * this.progress;
+  //   RAINBOW.forEach((color, i) => {
+  //     g.lineStyle(BAND, color, 1);
+  //     g.beginPath();
+  //     g.arc(this.cx, this.cy, OUTER_R - i * BAND, Math.PI, end, false);
+  //     g.strokePath();
+  //   });
+  // }
+
+  // Moonbow picture, made once: the seven pale bands blend into each other
+  // through one radial gradient (no seams), with a soft glow on both edges
+  static moonbowTexture(scene) {
+    const key = 'moonbow';
+    if (scene.textures.exists(key)) return key;
+    const outer = OUTER_R + BAND / 2, inner = OUTER_R - BAND * (MOONBOW.length - 0.5);
+    const GLOW = 24;
+    const R = outer + GLOW, size = R * 2;
+    const tex = scene.textures.createCanvas(key, size, size);
+    const ctx = tex.getContext();
+    const rgba = (c, a) => `rgba(${(c >> 16) & 255}, ${(c >> 8) & 255}, ${c & 255}, ${a})`;
+    const grad = ctx.createRadialGradient(R, R, 0, R, R, R);
+    const at = (r) => Math.max(0, Math.min(1, r / R));
+    grad.addColorStop(at(inner - GLOW), 'rgba(220, 230, 255, 0)');
+    grad.addColorStop(at(inner - GLOW / 2), 'rgba(220, 230, 255, 0.1)');
+    MOONBOW.slice().reverse().forEach(([c, a], k) => {            // inner → outer band centres
+      grad.addColorStop(at(inner + BAND * (k + 0.5)), rgba(c, a));
+    });
+    grad.addColorStop(at(outer + GLOW / 2), 'rgba(220, 230, 255, 0.1)');
+    grad.addColorStop(1, 'rgba(220, 230, 255, 0)');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(R, R, R, 0, Math.PI * 2);
+    ctx.arc(R, R, Math.max(0, inner - GLOW), 0, Math.PI * 2, true);
+    ctx.fill('evenodd');
+    tex.refresh();
+    return key;
+  }
+
+  // Shimmer picture: a soft patch of light on the moonbow's ring at angle 0
+  // (turning the image moves it along the arc). null if the browser can't draw it.
+  static shimmerTexture(scene) {
+    const key = 'moonbow_shimmer';
+    if (scene.textures.exists(key)) return key;
+    const outer = OUTER_R + BAND / 2, inner = OUTER_R - BAND * (MOONBOW.length - 0.5);
+    const R = outer + 8, size = R * 2;
+    const probe = document.createElement('canvas').getContext('2d');
+    if (!probe.createConicGradient) return null;
+    const tex = scene.textures.createCanvas(key, size, size);
+    const ctx = tex.getContext();
+    const SPAN = 0.34;                                           // radians the light covers
+    const cone = ctx.createConicGradient(-SPAN / 2, R, R);
+    const f = SPAN / (Math.PI * 2);
+    cone.addColorStop(0, 'rgba(255, 255, 255, 0)');
+    cone.addColorStop(f * 0.5, 'rgba(255, 255, 255, 0.22)');
+    cone.addColorStop(f, 'rgba(255, 255, 255, 0)');
+    cone.addColorStop(1, 'rgba(255, 255, 255, 0)');
+    ctx.fillStyle = cone;
+    ctx.beginPath();
+    ctx.arc(R, R, outer, 0, Math.PI * 2);
+    ctx.arc(R, R, inner, 0, Math.PI * 2, true);
+    ctx.fill('evenodd');
+    // soften its inner and outer edges
+    ctx.globalCompositeOperation = 'destination-in';
+    const edge = ctx.createRadialGradient(R, R, inner, R, R, outer);
+    edge.addColorStop(0, 'rgba(0,0,0,0)');
+    edge.addColorStop(0.3, 'rgba(0,0,0,1)');
+    edge.addColorStop(0.7, 'rgba(0,0,0,1)');
+    edge.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = edge;
+    ctx.fillRect(0, 0, size, size);
+    tex.refresh();
+    return key;
+  }
+
+  // Reveal the moonbow from its left foot up and over to `progress` (0–1)
   draw() {
-    const g = this.arc;
+    const g = this.revealShape;
     g.clear();
     if (this.progress <= 0) return;
-    const end = Math.PI + Math.PI * this.progress;
-    RAINBOW.forEach((color, i) => {
-      g.lineStyle(BAND, color, 1);
-      g.beginPath();
-      g.arc(this.cx, this.cy, OUTER_R - i * BAND, Math.PI, end, false);
-      g.strokePath();
-    });
+    g.fillStyle(0xffffff, 1);
+    g.slice(this.cx, this.cy, OUTER_R + BAND + 40, Math.PI, Math.PI + Math.PI * this.progress, false);
+    g.fillPath();
+  }
+
+  // A soft light gliding slowly along the moonbow, over and over
+  updateShimmer(time) {
+    if (!this.shimmer) return;
+    if (this.progress < 1) { this.shimmer.setAlpha(0); return; }
+    const t = (time % SHIMMER_MS) / SHIMMER_MS;
+    this.shimmer.setAlpha(1).setRotation(Math.PI - 0.3 + t * (Math.PI + 0.6));   // left foot → right foot
   }
 
   // Sweep the rainbow into view (as she heads on from ACHIEVEMENTS)
@@ -209,10 +325,13 @@ export class RainbowDestination {
       ease: 'Sine.easeInOut',
       onUpdate: () => this.draw(),
       onComplete: () => {
+        // OLD RAINBOW pulse:
+        // scene.tweens.add({ targets: this.arc, alpha: { from: 0.92, to: 0.72 }, duration: 1800, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+        // Moonbow: a slower, softer breathing of its light
         scene.tweens.add({
           targets: this.arc,
-          alpha: { from: 0.92, to: 0.72 },
-          duration: 1800,
+          alpha: { from: 0.9, to: 0.62 },
+          duration: 3200,
           yoyo: true,
           repeat: -1,
           ease: 'Sine.easeInOut',

@@ -2573,3 +2573,48 @@ All tests pass.
 - **Leaves with her:** as soon as she moves off the node onto the bridge, the card disappears from the screen by itself. Jumping around on the node keeps it, and coming back to the node later shows it again.
 
 All tests pass.
+
+
+---
+
+## Turn 45 — The rainbow becomes a moonbow
+
+### 👤 You
+
+> In the final scene with the castle and the text "It's just the beginning," replace the rainbow arch with a moonbow (a pale rainbow made by moonlight) to match my night theme.
+>
+> - Keep the same position and size as the current rainbow.
+> - Use soft, glowing silver, lavender, and icy blue colors with low opacity.
+> - Add a gentle glow and a slow shimmer animation.
+> - Change ONLY this rainbow. Do not touch the castle, character, text, buttons, or any other node.
+> - Keep the old rainbow code commented out so I can switch back.
+>
+> Tell me which files you changed when done.
+
+<details>
+<summary><b>Work done</b></summary>
+
+- **Only file changed:** `src/effects/RainbowDestination.js`.
+- **Moonbow:**
+  - **Colours:** seven pale bands, outer → inner: silver-lavender, lavender, soft violet-lavender, moonlit silver (the brightest), icy blue, deeper icy blue, lavender, at 36–64% opacity.
+  - **Smooth:** drawn once as a single radial gradient, so the bands blend softly with no seams. A first try that drew each band as a separate stroke showed faint lines between the bands, so it was replaced.
+  - **Same size and place:** same centre, same radius (340) and the same 7 × 17px band width as the rainbow.
+- **Gentle glow:** a soft halo fading out about 24px beyond both edges of the bands, plus a slow breathing of its brightness (0.9 ↔ 0.62 over 3.2s, slower and softer than the rainbow's pulse).
+- **Slow shimmer:** a soft patch of white light glides along the arch from one foot to the other every 7 seconds (a light texture that slowly turns, additive blend). Browsers that can't draw it simply show the moonbow without it.
+- **Reveal:** it still sweeps into view from its left foot as she heads on from ACHIEVEMENTS, just as before (now through a mask).
+- **Old rainbow kept:** its colours, its `this.arc = scene.add.graphics()…` line, its `draw()` and its alpha pulse are all still in the file, commented out, with step-by-step "to switch back" notes at the top.
+- **Untouched:** castle, island, flowers, landing platform, clouds, stars, background glow, character, quote text, contact card, buttons and all other nodes.
+- **Tests:** rainbow (13/13), ending (24/24) and rainbow-island idle (10/10) suites pass.
+
+</details>
+
+### 🤖 Claude
+
+**Done:** the rainbow over the castle is now a moonbow.
+- **Colours:** pale silver, lavender and icy blue bands at low opacity.
+- **Glow:** a soft glow around it that slowly breathes.
+- **Shimmer:** a gentle light that glides along the arch every 7 seconds.
+
+It's in the same place and the same size, and it still sweeps into view as before.
+
+**File changed:** only `src/effects/RainbowDestination.js`. The old rainbow code is still there, commented out, with notes at the top of the file on how to switch back. Nothing else in the scene was touched, and all tests pass.
