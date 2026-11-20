@@ -255,7 +255,7 @@ export class BalloonRide {
     const to = station.tie;
     p.facing = to.x < p.x ? -1 : 1;
     p.setFlipX(p.facing < 0);
-    p.playReaction('land', 480);                 // bends down to set them down
+    p.playReaction('land', 480, { locked: true });   // bends down to set them down (plays out even if a key is held)
     this.leaving = true;
     this.scene.tweens.killTweensOf(this.bouquet);
     const from = { x: this.bouquet.x, y: this.bouquet.y, a: this.bouquet.angle };

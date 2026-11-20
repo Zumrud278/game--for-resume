@@ -171,9 +171,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     // A short reaction pose (e.g. a cheer on the rainbow island) wins until it
     // ends or she's steered
     if (this.reaction) {
-      if (dir !== 0 || now >= this.reaction.until) {
+      if (now >= this.reaction.until || (dir !== 0 && !this.reaction.locked)) {
         this.reaction = null;
       } else {
+        if (this.reaction.locked) this.body.setVelocityX(0);
         this.setPose(this.reaction.key);
         this.prevFallSpeed = this.body.velocity.y;
         this.wasOnGround = onGround;
@@ -240,8 +241,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   /** Show `key` (e.g. 'celebrate') for `ms`, unless she's steered first. */
-  playReaction(key, ms) {
-    this.reaction = { key, until: this.scene.time.now + ms };
+  /**
+   * Show `key` for `ms`. Normally steering her cancels it; a `locked` one
+   * (e.g. bending down to set the balloons on their post) plays to the end,
+   * holding her in place for that moment.
+   */
+  playReaction(key, ms, { locked = false } = {}) {
+    this.reaction = { key, until: this.scene.time.now + ms, locked };
   }
 
   // Place her standing at (x, feetY) with no momentum

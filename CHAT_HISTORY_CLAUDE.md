@@ -2449,3 +2449,47 @@ Both also show in the Explore Resume panel. All tests pass. Remember to commit t
 ### 🤖 Claude
 
 **Done:** the Achievements panel now shows just "YONCA – AI-Based Daily Farm Planner", the sentence "My teammate and I built an AI-based daily farm planner for farmers, created for the Yonca app.", and your certificate picture right under it. The extra "Challenge Winner" entry and its words are gone. All tests pass.
+
+
+---
+
+## Turn 42 — Node information as a small card at the top; the game keeps going
+
+### 👤 You
+
+> when i reach each node it open information table but make this tbale small like put it above so it does not hold whole screen and game
+
+<details>
+<summary><b>Work done</b></summary>
+
+- **Small card at the top (`src/ui/InfoPanel.js`, `src/ui/infoPanel.css`):**
+  - reaching a node now opens a compact card docked at the top centre, between the level badge and the Explore Resume button
+  - it's at most 460px wide and 38% of the screen tall (about 180px for Education, 270px for Achievements), with smaller text and spacing; a long one scrolls inside
+  - no dark backdrop: the rest of the screen and the girl stay fully visible below it
+  - the certificate shows as a small picture (120px tall) inside the card and still opens full size when clicked
+  - on narrow windows the card sits below the level badge and star counter
+- **The game doesn't stop (`GameScene.isPanelOpen` → `panel.blocksGame`):**
+  - while the card is open she can keep walking and jumping
+  - the card doesn't take keyboard focus, so arrows and Space go to the game
+  - it closes with Enter, Esc, ✕ or Continue, and closes by itself once she walks about 140px past that node's edge (`closeCardWhenAway`)
+- **Explore Resume** is still the large panel over a dimmed backdrop, and the game waits while it's open, since it holds the whole resume.
+- **Follow-up fix (`Player.playReaction` with `locked`):** her short bend-down when she sets the balloons on the ACHIEVEMENTS post now plays to the end even if a key is held. Before, the full-screen panel blocked the keys at that moment; now that the game keeps running, holding → would have skipped it.
+- **Tests:**
+  - new `card` suite passes 9/9:
+    - the card is small at the top centre with no backdrop, and she's visible under it
+    - she can walk while it's open, and Enter closes it
+    - walking away closes it, the certificate is small inside it, and Explore Resume is still the full panel
+  - the panels suite was updated: "she can still walk" replaces "she can't move", and Enter replaces the backdrop click; it passes 27/27
+  - media suite updated for the smaller certificate, 8/8
+  - all other suites pass (movement, bridges, stars, rides up and down, rainbow, ending, idle, balloon placing 19/19, Enter-to-close)
+
+</details>
+
+### 🤖 Claude
+
+**Done:**
+- **Small card:** when she reaches a node, its information now opens as a small card at the top of the screen. It's no longer a big window over everything, so she and the level stay fully visible, and you can keep walking and jumping while it's open.
+- **Closing it:** press Enter, Esc, ✕ or Continue, or just walk away from the node and it closes by itself.
+- **Explore Resume:** still opens the big panel, since that's the whole resume.
+
+All tests pass.

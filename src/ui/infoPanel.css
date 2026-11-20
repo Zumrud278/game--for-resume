@@ -220,6 +220,46 @@
   .rp-icon { width: 40px; height: 40px; }
 }
 
+/* ── Node card: small, docked at the top centre, the game stays visible ── */
+.rp-overlay.rp-compact {
+  inset: auto;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(460px, calc(100vw - 24px));
+  padding: 0;
+  display: block;
+  background: none;
+  pointer-events: none;          /* clicks outside the card reach the game */
+}
+.rp-compact .rp-panel {
+  pointer-events: auto;
+  width: 100%;
+  max-height: 38vh;
+  border-radius: 16px;
+  font-size: 14px;
+  line-height: 1.45;
+  transform: translateY(-10px);
+}
+.rp-compact.rp-visible .rp-panel { transform: none; }
+.rp-compact .rp-header { padding: 10px 50px 8px 14px; gap: 10px; }
+.rp-compact .rp-icon { width: 34px; height: 34px; }
+.rp-compact .rp-level { font-size: 0.72em; }
+.rp-compact .rp-title { font-size: 19px; }
+.rp-compact .rp-close { top: 9px; right: 9px; width: 30px; height: 30px; font-size: 15px; }
+.rp-compact .rp-body { padding: 8px 14px 4px; }
+.rp-compact .rp-item { margin-bottom: 6px; padding: 6px 10px 6px 28px; border-radius: 10px; }
+.rp-compact .rp-item::before { left: 10px; top: 6px; }
+.rp-compact .rp-image img { width: auto; max-width: 100%; max-height: 120px; }
+.rp-compact .rp-link { margin-top: 6px; padding: 3px 12px; }
+.rp-compact .rp-footer { padding: 6px 14px 10px; }
+.rp-compact .rp-hint { display: inline; font-size: 0.78em; }
+.rp-compact .rp-continue { width: auto; padding: 5px 16px; font-size: 0.92em; }
+/* narrow windows: below the level badge and star counter */
+@media (max-width: 960px) {
+  .rp-overlay.rp-compact { top: 118px; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .rp-overlay, .rp-panel, .rp-close, .rp-continue { transition: none; }
 }

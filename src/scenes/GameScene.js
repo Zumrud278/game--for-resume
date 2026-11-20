@@ -176,6 +176,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.updateGuide(input, paused);
+    this.closeCardWhenAway();
     this.guideCoins.update(time);
 
     // On the rainbow island she stays lively while standing still
@@ -275,10 +276,22 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
-  // Resume panel or ending card open → game input is paused
+  // Full resume panel or ending card open → game input is paused
+  // (the small node card at the top doesn't pause the game)
   isPanelOpen() {
     const ui = this.scene.get('UI');
-    return !!(ui?.panel?.isOpen || ui?.ending?.isOpen);
+    return !!(ui?.panel?.blocksGame || ui?.ending?.isOpen);
+  }
+
+  // The small node card closes by itself once she has walked away from its node
+  closeCardWhenAway() {
+    const panel = this.scene.get('UI')?.panel;
+    if (!panel?.isOpen || !panel.compact || panel.nodeIndex == null) return;
+    const isl = this.islands[panel.nodeIndex];
+    if (!isl) return;
+    const b = this.player.body;
+    const away = Math.abs(b.center.x - isl.x) > isl.width / 2 + 140 || Math.abs(b.bottom - isl.surfaceY) > 300;
+    if (away) panel.close();
   }
 
   // "Play again": fade out and start over from the START island

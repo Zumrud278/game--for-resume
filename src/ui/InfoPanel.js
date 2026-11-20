@@ -22,16 +22,21 @@ const safeUrl = (u) => (/^(https?:\/\/|assets\/)/.test(u || '') ? escapeHtml(u) 
  * Purple resume information panel, drawn as an HTML overlay so the text
  * is crisp, scrollable and responsive at any screen size.
  *
- *   panel.showSection(section)  – one island's information
- *   panel.showAll()             – the whole resume (Explore Resume button)
+ *   panel.showSection(section, nodeIndex)
+ *        – one island's information as a small card at the top of the
+ *          screen: no backdrop, the game keeps running around it
+ *   panel.showAll()   – the whole resume (Explore Resume button), full panel
+ *                       over a dimmed backdrop; the game waits while it's open
  *   panel.close()
- *   panel.isOpen
+ *   panel.isOpen      panel.blocksGame (true only for the full panel)
  */
 export class InfoPanel {
   constructor({ onOpen, onClose } = {}) {
     this.onOpen = onOpen;
     this.onClose = onClose;
     this.isOpen = false;
+    this.compact = false;
+    this.nodeIndex = null;
 
     this.root = document.createElement('div');
     this.root.className = 'rp-overlay';
@@ -80,7 +85,20 @@ export class InfoPanel {
     window.addEventListener('keydown', this.onKey);
   }
 
-  showSection(section) {
+  /** The full panel pauses the game; the small node card doesn't. */
+  get blocksGame() {
+    return this.isOpen && !this.compact;
+  }
+
+  setCompact(on) {
+    this.compact = on;
+    this.root.classList.toggle('rp-compact', on);
+    this.root.querySelector('.rp-panel').setAttribute('aria-modal', on ? 'false' : 'true');
+  }
+
+  showSection(section, nodeIndex = null) {
+    this.setCompact(true);
+    this.nodeIndex = nodeIndex;
     this.el.icon.src = ICON_SRC[section.icon] || ICON_SRC.star;
     this.el.level.textContent = `Level ${section.level}`;
     this.el.title.textContent = section.title;
@@ -90,6 +108,8 @@ export class InfoPanel {
   }
 
   showAll() {
+    this.setCompact(false);
+    this.nodeIndex = null;
     this.el.icon.src = ICON_SRC.star;
     this.el.level.textContent = `${RESUME.name}'s journey`;
     this.el.title.textContent = 'Resume';
@@ -133,7 +153,10 @@ export class InfoPanel {
       requestAnimationFrame(() => this.root.classList.add('rp-visible'));
       this.onOpen?.();
     }
-    this.el.close.focus({ preventScroll: true });
+    // The full panel takes keyboard focus; the small card leaves it with the
+    // game (so arrows / Space keep moving her, and Space can't "click" a button)
+    if (this.compact) document.activeElement?.blur?.();
+    else this.el.close.focus({ preventScroll: true });
   }
 
   close() {

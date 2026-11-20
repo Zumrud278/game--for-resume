@@ -39,7 +39,7 @@ export class UIScene extends Phaser.Scene {
     const onIsland = (index) => {
       this.hud.setLevel(index);
       const section = RESUME_SECTIONS[ISLANDS[index]?.id];
-      if (section) this.panel.showSection(section);
+      if (section) this.panel.showSection(section, index);
     };
     gameScene.events.on('island-changed', onIsland);
 
