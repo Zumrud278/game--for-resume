@@ -322,15 +322,16 @@ export class GameScene extends Phaser.Scene {
     this.events.on('balloon-release', (onTarget, name) => { if (name === 'up') show(false); });
   }
 
-  // The small node card closes by itself once she has walked away from its node
+  // The small node card goes away as soon as she steps off its node
   closeCardWhenAway() {
     const panel = this.scene.get('UI')?.panel;
     if (!panel?.isOpen || !panel.compact || panel.nodeIndex == null) return;
     const isl = this.islands[panel.nodeIndex];
     if (!isl) return;
-    const b = this.player.body;
-    const away = Math.abs(b.center.x - isl.x) > isl.width / 2 + 140 || Math.abs(b.bottom - isl.surfaceY) > 300;
-    if (away) panel.close();
+    const b = this.player.body, c = isl.collider.body;
+    const dy = b.bottom - isl.surfaceY;          // a normal jump on the node (~186px) doesn't count
+    const off = b.center.x < c.left - 30 || b.center.x > c.right + 30 || dy > 120 || dy < -240;   // 30px onto the bridge = she has moved on
+    if (off) panel.close();
   }
 
   // "Play again": fade out and start over from the START island

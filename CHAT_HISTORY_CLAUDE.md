@@ -2538,3 +2538,38 @@ All tests pass.
 3. **Balloon hints:** while she rides the balloon up, a bobbing "⬇ Land here ⬇" sign floats over Achievements, and both the top hint and the controls bar say "land on ACHIEVEMENTS". If she lets go anywhere else, a message tells her to grab the balloon again and land on the Achievements island.
 
 All tests pass.
+
+
+---
+
+## Turn 44 — No "Continue" on the node card; it disappears when she moves on
+
+### 👤 You
+
+> do not put continue word when she already moves from that node remove info from screen
+
+<details>
+<summary><b>Work done</b></summary>
+
+- **No Continue button on node cards (`src/ui/infoPanel.css`):**
+  - the small card at the top now has only the ✕ and "Press Enter or Esc to close", so it's a bit shorter too
+  - the big Explore Resume panel keeps its "Back to the game ✦" button
+- **The card leaves with her (`GameScene.closeCardWhenAway`):**
+  - before, it stayed until she was about 140px past the node's edge; now it disappears as soon as she steps off the node onto the bridge (about 30px past where she can stand, so it doesn't flicker when she first arrives at the edge)
+  - it also disappears if she drops below the node, or rises well above it on the balloon
+  - a normal jump on the node (about 186px high) doesn't count, so the card stays while she hops around on it
+- Coming back to the node later still shows its information again (as in Turn 43).
+- **Tests:**
+  - card suite now 11/11: no Continue button; jumping on the node keeps the card; stepping off closes it (measured 3px past the island edge); she can still walk on the node while it's open
+  - panels suite: closes with ✕, Esc and Enter instead of Continue, 27/27
+  - Enter-to-close, revisit, movement, rainbow, balloon placing, ride up and down all pass
+
+</details>
+
+### 🤖 Claude
+
+**Done:**
+- **No Continue button:** the node's information card now just has the ✕ and "Press Enter or Esc to close".
+- **Leaves with her:** as soon as she moves off the node onto the bridge, the card disappears from the screen by itself. Jumping around on the node keeps it, and coming back to the node later shows it again.
+
+All tests pass.

@@ -254,7 +254,8 @@
 .rp-compact .rp-link { margin-top: 6px; padding: 3px 12px; }
 .rp-compact .rp-footer { padding: 6px 14px 10px; }
 .rp-compact .rp-hint { display: inline; font-size: 0.78em; }
-.rp-compact .rp-continue { width: auto; padding: 5px 16px; font-size: 0.92em; }
+.rp-compact .rp-continue { display: none; }      /* node card: no Continue — it goes away when she moves on */
+.rp-compact .rp-footer { padding: 4px 14px 8px; justify-content: flex-end; }
 /* narrow windows: below the level badge and star counter */
 @media (max-width: 960px) {
   .rp-overlay.rp-compact { top: 118px; }
