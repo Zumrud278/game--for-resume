@@ -2075,3 +2075,36 @@ Both changes are done, and everything else is where it was.
 The gold lettering keeps its dark shadow, so it still stands out against the sky.
 
 The centre island, character, moon, castle and Start button have not moved. All 32 layout checks pass.
+
+
+---
+
+## Turn 32 — Start screen: the game's own floating islands instead of the cliff walls
+
+### 👤 You
+
+> Replace the brick walls on the left and right edges with the floating island platforms/nodes from the game itself.
+>
+> 1. Use Existing Game Island Nodes: Remove the tall brick/masonry walls on the left and right and use the actual floating island sprites/nodes from the game's level/world assets instead.
+> 2. Position & Scale: Place smaller floating island nodes along the left and right sides as midground/background framing around the main center island, scaled cleanly so they don't block the distant floating castle in the lower-right clouds or the crescent moon on the left.
+> 3. Keep Everything Else As-Is: Keep the "Emerald World" title crest, the character standing on the center floating island, and the single centered "Start" button unchanged.
+
+<details>
+<summary><b>Work done</b></summary>
+
+- **Removed:** both generated cliffs and the clouds at their feet. `MenuScene.js` no longer uses `makeCliff`, and the cliff generator code is deleted from `pixelArt.js`.
+- **Added:** six floating islands using the game's own island art, the same images as the level nodes:
+  - left: Projects (`island_4`), Skills (`island_3`) lower down, and a small, hazier Education island (`island_2`) far top-left
+  - right: Achievements (`trophy_island`, the trophy-free version), a small far Skills island above the castle, and a small Education island to the right of the castle
+- **Sizing:** 0.55–1.0× their original size (scaled with the view height) and tinted slightly paler the farther away they are. Each gently bobs, out of step with the others.
+- **Placement:** kept clear of the crescent moon and the distant castle, which are both fully visible.
+- **Unchanged:** title, girl on the centre island, moon, castle and Start button stay exactly where they were (title 47–237, feet 427, button 597).
+- **Tests:** start-screen layout check passes 32/32 at six 16:9 sizes.
+
+</details>
+
+### 🤖 Claude
+
+**Done:** the cliff walls are gone. Six of the game's own floating islands now frame the scene instead: Projects, Skills and a small far Education island on the left, and Achievements, a small far Skills island and a small Education island on the right. They're smaller than the centre island, slightly hazier the farther away they are, and gently bob. None of them cover the moon or the castle.
+
+The title, the girl on the centre island and the Start button have not moved. All 32 layout checks pass.

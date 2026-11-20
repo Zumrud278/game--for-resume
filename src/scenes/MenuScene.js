@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { COLORS } from '../utils/constants.js';
 import { prescaleTexture } from '../utils/textureQuality.js';
 import {
-  makeTitleEmblem, makeEmeraldIsland, makeCliff, makeStartButton, makeMoon, makePixelStar, makeSpark4,
+  makeTitleEmblem, makeEmeraldIsland, makeStartButton, makeMoon, makePixelStar, makeSpark4,
 } from '../effects/pixelArt.js';
 
 /**
@@ -10,7 +10,7 @@ import {
  *   sky:     twilight gradient, twinkling stars, a few clouds, white crescent
  *            moon on the left, misty mountains and the distant castle below
  *   top:     "Emerald / World" title in an open gold filigree frame
- *   sides:   two natural floating cliff islands framing the view
+ *   sides:   smaller floating islands from the game itself framing the view
  *   centre:  the girl standing on a wide floating island with vines,
  *            wildflowers and glowing crystal clusters
  *   bottom:  ONE Start button over the island's rocky underside
@@ -135,32 +135,21 @@ export class MenuScene extends Phaser.Scene {
       this.tweens.add({ targets: cloud, x: cloud.x + rnd.between(-40, 40), duration: rnd.between(6000, 9000), yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
     });
 
-    // ── Midground: wide natural cliffs rising from the bottom clouds, left and right ──
-    const TOP = 34;                                      // rows above the grass for the trees
-    const rowsTo = (fy) => Math.ceil((height - height * fy) / P) + TOP;   // texture height for a grass line at fy
-    const leftH = rowsTo(0.48);
-    makeCliff(this, `menu_cliff_l_${leftH}`, {
-      w: 150, h: leftH, top: TOP, face: 'right', seed: 3,
-      faceAt: (r) => 128 + r * 0.06 + Math.sin(r / 13) * 3,
-      trees: [28, 92], shrubs: [12, 55, 112], flowers: [40, 68, 77, 103, 122],
-      vines: 8, vineFrom: 96, vineTo: 136, vineLen: 60,
-    });
-    this.add.image(0, height, `menu_cliff_l_${leftH}`).setOrigin(0, 1).setScale(P);
-    // right: taller, overhanging at the top, its face kept right of the distant castle
-    const rightH = rowsTo(0.2);
-    makeCliff(this, `menu_cliff_r_${rightH}`, {
-      w: 120, h: rightH, top: TOP, face: 'left', seed: 5,
-      faceAt: (r) => (r < 40 ? 6 + Math.sin(r / 9) * 2
-        : r < 90 ? 6 + 64 * (0.5 - 0.5 * Math.cos(((r - 40) / 50) * Math.PI))
-          : 70 + Math.sin(r / 12) * 2),
-      trees: [26, 80], shrubs: [12, 52, 102], flowers: [36, 62, 90, 112],
-      vines: 12, vineFrom: 8, vineTo: 72, vineLen: 46,
-    });
-    this.add.image(width, height, `menu_cliff_r_${rightH}`).setOrigin(1, 1).setScale(P);
-    // the cliffs' feet disappear into soft clouds
-    [['cloud_3', 0.07, 0.97, 1], ['cloud_1', 0.2, 1.01, 0.9], ['cloud_2', 0.97, 0.98, 0.9]].forEach(([key, fx, fy, s]) => {
-      const c = this.add.image(width * fx, height * fy, key).setScale(s * (height / 720)).setAlpha(0.92).setTint(0xf1e6ff);
-      this.tweens.add({ targets: c, x: c.x + rnd.between(-14, 14), duration: rnd.between(5000, 8000), yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    // ── Midground: the game's own floating island nodes framing the left and right ──
+    // (positions are fractions of the view; sizes follow the view height) — kept
+    // clear of the crescent moon (left) and the distant castle (lower right)
+    const u = height / 720;
+    [
+      // [texture, x, y, scale, depth tint]  — farther ones smaller and hazier
+      ['island_2', 0.055, 0.17, 0.6, 0xc9bce0],          // far, top-left
+      ['island_4', 0.09, 0.42, 1.0, 0xece6f6],           // left, Projects island
+      ['island_3', 0.2, 0.73, 0.95, 0xe6def3],           // lower left, Skills island
+      ['island_3', 0.745, 0.42, 0.55, 0xc9bce0],         // far, right of centre (above the castle)
+      ['trophy_island', 0.925, 0.25, 0.8, 0xece6f6],     // right, Achievements island
+      ['island_2', 0.955, 0.66, 0.62, 0xd8cdea],         // lower right, beside the castle
+    ].forEach(([key, fx, fy, s, tint], i) => {
+      const isl = this.add.image(Math.round(width * fx), Math.round(height * fy), key).setScale(s * u).setTint(tint);
+      this.tweens.add({ targets: isl, y: isl.y - 5 * u, duration: 2800 + i * 350, delay: i * 400, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
     });
 
     // ── Layout (top → bottom): title, character on the centre island, Start ──
