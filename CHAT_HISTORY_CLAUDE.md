@@ -1796,3 +1796,58 @@ I made the Skills node about 14% smaller. Its whole bottom tip now shows above t
 ### 🤖 Claude
 
 Understood. The game stays only in `game--for-resume`. Your website folder is untouched (`git status` is clean), and I'll never add game files to it, even when your editor has the website open.
+
+
+---
+
+## Turn 27 — Ride-down balloons wait on Achievements only after she arrives
+
+### 👤 You
+
+> Fix the balloon behavior at the Achievements node:
+>
+> - The character's balloons should move with her when she travels.
+> - Keep a separate set of balloons at the Achievements node for the ride-down animation.
+> - The waiting balloons should **only appear after the character reaches Achievements and sits down**.
+> - They must not be visible before she arrives or while she is moving.
+> - Do not remove or break the character's own balloons or the existing ride-down animation.
+>
+> Keep the current design and animations. Only fix the balloon timing and behavior.
+
+<details>
+<summary><b>Work done</b></summary>
+
+- **Problem:** the ride-down bouquet was always tied to its post on ACHIEVEMENTS, so it was already visible while she was still riding up with her own balloons.
+- **`src/entities/BalloonRide.js`:**
+  - new option `waitForArrival`: the station's bouquet and its "Ride down" sign start hidden and can't be grabbed
+  - `appear()` floats the bouquet down onto the post (0.8s, then the usual sway), and the sign fades in
+  - `stow()` hides it again; if her used balloon is still floating away, it hides once that animation ends
+  - the up balloon has no gating, so it works exactly as before
+- **`src/scenes/GameScene.js`:**
+  - `updateWaitingBalloons()`: the bouquet appears once she has landed on ACHIEVEMENTS and stood still for 0.45s (no keys held, not riding, info panel closed)
+  - it's put away once she has left the island
+  - once it's out it stays while she walks over to grab it
+- **Her own balloons:** unchanged. They stay in her fist the whole ride (measured 0.00px gap) and still float away when she lands.
+- **Tests:**
+  - new suite `waitballoons` passes 9/9:
+    - hidden at start and during the whole ride up
+    - appears only after she has landed and is standing still
+    - put away after riding down
+    - hidden again on a second trip up
+  - all 9 older suites pass (178 checks)
+  - the test helper now pauses on ACHIEVEMENTS when coming back from the rainbow, like a player would
+
+</details>
+
+### 🤖 Claude
+
+**Fixed:** the ride-down balloons now wait on Achievements only after she gets there.
+
+- **Her own balloons:** she holds them for the whole ride up, and they float away when she lands, as before.
+- **Before she arrives:** the Achievements post is bare. There are no balloons and no "Ride down" sign, during the ride up or before.
+- **When she lands and stands still:** after about half a second, a fresh bouquet floats down onto the post and the "Ride down" sign fades in. It stays there while she walks over to grab it.
+- **Riding down:** works as before. Once she has left Achievements, the waiting bouquet is put away until her next visit.
+
+**One change to know about:** coming back from the rainbow, she needs to stop on Achievements for a moment so the balloons can appear. If she just keeps walking, she'll walk off the edge.
+
+All tests pass: the new balloon suite 9/9, and the other 9 suites with 178 checks. Nothing is committed.

@@ -20,7 +20,9 @@ import { BALLOON, BALLOON_RIDE } from '../utils/constants.js';
 export class BalloonRide {
   /**
    * @param target  island she rides to (up ride) — or null with opts.isTarget
-   * @param opts    { isTarget(feetY), ceilingIsland, facing (1 right / -1 left), hint }
+   * @param opts    { isTarget(feetY), ceilingIsland, facing (1 right / -1 left), hint,
+   *                  waitForArrival — hidden until appear() is called (she has
+   *                  arrived on its island and settled); stow() hides it again }
    */
   constructor(scene, player, { x, y }, target, opts = {}) {
     this.scene = scene;
@@ -31,6 +33,8 @@ export class BalloonRide {
     this.isTarget = opts.isTarget ?? ((feetY) => Math.abs(feetY - target.surfaceY) < 4);
     this.holding = false;
     this.mustLeave = false;        // after letting go, step away before grabbing again
+    this.gated = !!opts.waitForArrival;
+    this.ready = !this.gated;      // a gated station is hidden until appear()
 
     // Post on the launch rock, with the bouquet tied to its top
     this.post = scene.add.image(x, y + 6, 'bridge_post').setOrigin(0.5, 1).setDepth(3);
@@ -57,6 +61,7 @@ export class BalloonRide {
       .setOrigin(0.5)
       .setDepth(4);
     scene.tweens.add({ targets: this.hint, y: this.hint.y - 6, duration: 1500, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    if (this.gated) { this.bouquet.setVisible(false); this.hint.setVisible(false); }
 
     // Highest her feet may go: a little above ACHIEVEMENTS, enough to steer onto it
     this.ceiling = (opts.ceilingIsland ?? target).surfaceY - BALLOON_RIDE.ceilingAbove;
@@ -98,6 +103,7 @@ export class BalloonRide {
     const body = p.body;
 
     if (!this.holding) {
+      if (!this.ready) return false;
       const near = Math.abs(body.center.x - this.tie.x) < BALLOON_RIDE.grabRange &&
         Math.abs(body.bottom - this.post.y) < 30;
       if (!near) this.mustLeave = false;
@@ -183,6 +189,7 @@ export class BalloonRide {
     p.setPose('idle');
 
     if (onTarget) {
+      this.leaving = true;
       // Job done: the balloon floats off into the sky; a fresh one appears on the post
       this.scene.tweens.add({
         targets: this.bouquet,
@@ -212,18 +219,54 @@ export class BalloonRide {
       ease: 'Sine.easeInOut',
       onComplete: () => {
         this.returning = false;
-        this.hint.setVisible(true);
+        this.hint.setVisible(this.ready);
         this.idleSway();
       },
     });
   }
 
   resetToPost(fade = false) {
+    this.leaving = false;
     this.bouquet.setPosition(this.tie.x, this.tie.y).setAngle(0);
+    if (!this.ready) {             // gated and she's not here: stay hidden until appear()
+      this.bouquet.setVisible(false).setAlpha(1);
+      this.hint.setVisible(false);
+      this.idleSway();
+      return;
+    }
     this.bouquet.setAlpha(fade ? 0 : 1);
     if (fade) this.scene.tweens.add({ targets: this.bouquet, alpha: 1, duration: 600 });
     this.hint.setVisible(true);
     this.idleSway();
+  }
+
+  /** Gated station: she has arrived and settled — the waiting bouquet floats down onto its post. */
+  appear() {
+    if (this.ready) return;
+    this.ready = true;
+    if (this.holding || this.leaving || this.returning) return;   // resetToPost will show it
+    this.scene.tweens.killTweensOf(this.bouquet);
+    this.bouquet.setPosition(this.tie.x, this.tie.y - 60).setAngle(0).setAlpha(0).setVisible(true);
+    this.scene.tweens.add({
+      targets: this.bouquet,
+      y: this.tie.y,
+      alpha: 1,
+      duration: 800,
+      ease: 'Sine.easeOut',
+      onComplete: () => this.idleSway(),
+    });
+    this.hint.setAlpha(0).setVisible(true);
+    this.scene.tweens.add({ targets: this.hint, alpha: 1, duration: 500, delay: 400 });
+  }
+
+  /** Gated station: she has left its island — hide the waiting bouquet again. */
+  stow() {
+    if (!this.gated || !this.ready || this.holding) return;
+    this.ready = false;
+    if (this.leaving || this.returning) return;   // its tween ends in resetToPost, which hides it
+    this.scene.tweens.killTweensOf(this.bouquet);
+    this.bouquet.setVisible(false);
+    this.hint.setVisible(false);
   }
 
   // Respawn / restart: drop the balloon without any animation
@@ -236,6 +279,7 @@ export class BalloonRide {
     this.player.pose = null;
     this.player.setPose('idle');
     this.scene.tweens.killTweensOf(this.bouquet);
+    this.returning = false;
     this.resetToPost();
     this.scene.events.emit('balloon-release', false);
   }

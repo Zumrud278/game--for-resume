@@ -90,10 +90,12 @@ export class GameScene extends Phaser.Scene {
       { x: ach.collider.body.left + 30, y: ach.surfaceY }, null, {                            // down
         facing: -1,
         hint: '🎈 Ride down',
+        waitForArrival: true,     // appears only once she has landed on ACHIEVEMENTS and settled
         ceilingIsland: ach,
         isTarget: (feetY) => feetY > ach.surfaceY + 40,   // landed anywhere below ACHIEVEMENTS
       });
     this.rides = [this.ride, this.rideDown];
+    this.achSettle = 0;           // ms she has stood still on ACHIEVEMENTS
 
     this.physics.add.collider(this.player, this.platforms, (player, zone) => {
       if (!player.body.touching.down || !zone.island) return;
@@ -162,6 +164,8 @@ export class GameScene extends Phaser.Scene {
     } else {
       this.player.update(input);
     }
+
+    this.updateWaitingBalloons(delta, input, paused, riding);
 
     // On the rainbow island she stays lively while standing still
     this.idleLife.update(time, delta, rideInput, riding);
@@ -280,6 +284,27 @@ export class GameScene extends Phaser.Scene {
 
   // She walked onto the rainbow island: light the landing platform, then the
   // ending (quote + contact card) plays — once per playthrough
+  /**
+   * The ride-down balloons wait on ACHIEVEMENTS only after she has got there:
+   * once she has landed and stood still for a moment they float down onto
+   * their post; when she leaves the island they're put away again.
+   */
+  updateWaitingBalloons(delta, input, paused, riding) {
+    const ach = this.launch.target;
+    const b = this.player.body;
+    const onAch = !riding && this.player.onGround &&
+      Math.abs(b.bottom - ach.surfaceY) < 3 &&
+      b.center.x > ach.collider.body.left - 6 && b.center.x < ach.collider.body.right + 6;
+    if (!onAch) {
+      this.achSettle = 0;
+      if (!riding) this.rideDown.stow();
+      return;
+    }
+    const still = !paused && !input.left && !input.right && !input.jump && Math.abs(b.velocity.x) < 5;
+    this.achSettle = still ? this.achSettle + delta : 0;
+    if (this.achSettle >= 450) this.rideDown.appear();
+  }
+
   arrive() {
     if (this.arrived) return;
     this.arrived = true;
