@@ -154,10 +154,12 @@ export class BootScene extends Phaser.Scene {
 
     // Character: every pose drawn once at its exact in-game size, so she's
     // rendered 1:1 — her eyes and fine details stay stable while she moves
-    prescaleTexture(this, 'idle', 0.75, 'idle_menu');   // start-screen copy (its own size)
-    // Blink frame for her idle animations on the rainbow island (eyes closed)
+    prescaleTexture(this, 'idle', 0.75, 'idle_menu');   // start-screen copies (their own size)
+    prescaleTexture(this, 'celebrate', 0.75, 'celebrate_menu');
+    // Blink frame (eyes closed): for the start screen and her idle life on the rainbow island
     if (!this.missing.includes('idle')) {
       makeBlinkTexture(this);
+      prescaleTexture(this, 'idle_blink', 0.75, 'idle_blink_menu');
       prescaleTexture(this, 'idle_blink', PLAYER_SCALE);
     }
     CHARACTER_KEYS.forEach((key) => {

@@ -2108,3 +2108,53 @@ The centre island, character, moon, castle and Start button have not moved. All 
 **Done:** the cliff walls are gone. Six of the game's own floating islands now frame the scene instead: Projects, Skills and a small far Education island on the left, and Achievements, a small far Skills island and a small Education island on the right. They're smaller than the centre island, slightly hazier the farther away they are, and gently bob. None of them cover the moon or the castle.
 
 The title, the girl on the centre island and the Start button have not moved. All 32 layout checks pass.
+
+
+---
+
+## Turn 33 — No emeralds on the start screen; the girl blinks and reacts
+
+### 👤 You
+
+> delte emerald symbols fromstarting point and make girl more inetractive blinking
+
+<details>
+<summary><b>Work done</b></summary>
+
+- **Emeralds removed from the start screen (`src/effects/pixelArt.js`, `src/scenes/MenuScene.js`):**
+  - the green and iridescent crystal clusters on the centre island, with their green glows and rising sparkles
+  - the green light pooled on the grass and the green tint cast on the girl
+  - the title's emerald gems: the crown's centre jewel is now a pearl, and the swash's centre gem is a gold diamond bead
+  - the two green gems on the Start button (its gold scrollwork stays)
+  - the firefly motes now drift in gold, pink and white
+  - the gem and crystal drawing code was deleted; a check finds 0 emerald-coloured pixels in the title, button and island art
+- **The girl is interactive (`createGirl` in `MenuScene.js`):**
+  - **Blinks** every 2–5 seconds, sometimes twice, using a closed-eye frame made at her start-screen size (`idle_blink_menu`, built in `BootScene.js`).
+  - **Breathes:** a gentle 1px rise and fall; her feet stay on the grass.
+  - **Looks toward the mouse pointer.** She turns around her torso, so she doesn't jump sideways.
+  - **Hover over her:** a hand cursor and a happy little hop with sparkles.
+  - **Click her:** she cheers (celebrate pose, bigger hop, sparkle burst), then returns to standing. The game does not start.
+  - **Left alone:** every few seconds she glances the other way or does a small hop.
+  - All her frames are pre-drawn at their screen size, so she stays crisp.
+- **Unchanged:** the title, the island, the side islands, the moon, the castle and the Start button are where they were (feet 427, button 597).
+- **Tests:**
+  - new start-screen girl suite passes 10/10:
+    - blinks, breathing, looking at the pointer, hover hop, click cheer and back to idle on the grass
+    - no emeralds; Start still works
+  - layout check passes 32/32
+  - game suites pass (including her idle life on the rainbow island)
+
+</details>
+
+### 🤖 Claude
+
+**Emeralds removed:** there are no green crystals on the island, no green glow, and no green gems on the title or the Start button. The crown now has a pearl, and the swash a small gold bead.
+
+**The girl is livelier:**
+- She blinks every few seconds, sometimes twice, and breathes gently.
+- She turns to look toward your mouse.
+- Hover over her and she does a happy little hop with sparkles.
+- Click her and she cheers with her arms up and a burst of sparkles, then goes back to standing. This doesn't start the game; only the Start button does.
+- Leave her alone and she sometimes glances around or hops on her own.
+
+Everything else is unchanged and all tests pass.

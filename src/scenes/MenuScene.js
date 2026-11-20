@@ -1,6 +1,5 @@
 import Phaser from 'phaser';
 import { COLORS } from '../utils/constants.js';
-import { prescaleTexture } from '../utils/textureQuality.js';
 import {
   makeTitleEmblem, makeEmeraldIsland, makeStartButton, makeMoon, makePixelStar, makeSpark4,
 } from '../effects/pixelArt.js';
@@ -11,8 +10,9 @@ import {
  *            moon on the left, misty mountains and the distant castle below
  *   top:     "Emerald / World" title in an open gold filigree frame
  *   sides:   smaller floating islands from the game itself framing the view
- *   centre:  the girl standing on a wide floating island with vines,
- *            wildflowers and glowing crystal clusters
+ *   centre:  the girl standing on a wide floating island with vines and
+ *            wildflowers — she blinks, breathes, looks toward the pointer,
+ *            and reacts when hovered or clicked
  *   bottom:  ONE Start button over the island's rocky underside
  * All pixel art is generated in src/effects/pixelArt.js and shown at a
  * whole-number scale with NEAREST filtering (crisp, pixelated).
@@ -92,7 +92,6 @@ export class MenuScene extends Phaser.Scene {
     // Pixel size: every pixel-art element is drawn at this whole-number scale
     const P = Phaser.Math.Clamp(Math.floor(height / 360), 1, 4);
     const cx = Math.round(width / 2);
-    const glowGreen = MenuScene.glow(this, 'emerald', 'rgba(90,255,180,0.75)', 'rgba(40,200,140,0.3)');
     const glowGold = MenuScene.glow(this, 'gold', 'rgba(255,225,130,0.7)', 'rgba(255,190,80,0.25)');
     const glowWhite = MenuScene.glow(this, 'white', 'rgba(255,255,255,0.7)', 'rgba(220,210,255,0.22)');
 
@@ -159,9 +158,10 @@ export class MenuScene extends Phaser.Scene {
     const emW = emblemTex.width * P, emH = emblemTex.height * P;
     const emY = Math.round(Math.max(emH / 2 + height * 0.03, height * 0.2));
 
-    const charKey = P === 2 ? 'idle_menu' : `idle_menu_${P}`;     // 0.75 of the art at P = 2
-    if (!this.textures.exists(charKey)) prescaleTexture(this, 'idle', 0.375 * P, charKey);
-    const charTex = this.textures.get(charKey).getSourceImage();
+    // her start-screen frames are pre-drawn at 0.75 of the art = 1:1 at P = 2
+    const charScale = P / 2;
+    const charTex = this.textures.get('idle_menu').getSourceImage();
+    const charH = charTex.height * charScale;
 
     const islandKey = makeEmeraldIsland(this);
     const islandTex = this.textures.get(islandKey).getSourceImage();
@@ -171,7 +171,7 @@ export class MenuScene extends Phaser.Scene {
     const btnTex = this.textures.get(btnKey).getSourceImage();
     const btnH = btnTex.height * P;
 
-    const grassY = Math.round(Math.max(height * 0.57, emY + emH / 2 + height * 0.05 + charTex.height));
+    const grassY = Math.round(Math.max(height * 0.57, emY + emH / 2 + height * 0.05 + charH));
     const islandTop = grassY - islandInfo.grassY * P;
     const btnY = Math.round(Math.min(grassY + 86 * P, height * 0.965 - btnH / 2));
 
@@ -192,28 +192,10 @@ export class MenuScene extends Phaser.Scene {
     });
 
     // ── Centre island ──
-    const pool = this.add.image(cx, grassY + 4 * P, glowGreen).setBlendMode(ADD)
-      .setDisplaySize(islandTex.width * P * 1.15, 60 * P).setAlpha(0.22);
     this.add.image(cx, islandTop, islandKey).setOrigin(0.5, 0).setScale(P);
-    islandInfo.crystals.forEach((c, i) => {
-      const gx = cx + (c.x - islandTex.width / 2) * P, gy = islandTop + c.y * P;
-      const g = this.add.image(gx, gy, glowGreen).setBlendMode(ADD).setDisplaySize(44 * P, 44 * P).setAlpha(0.45);
-      const gi = this.add.image(gx, gy - 4 * P, glowWhite).setBlendMode(ADD).setDisplaySize(26 * P, 26 * P).setTint(0xe9c8ff).setAlpha(0.3);
-      this.tweens.add({ targets: [g, gi], alpha: '+=0.3', duration: 1500 + i * 300, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
-      // soft light sparkles rising off the crystals
-      this.add.particles(gx, gy, 'star_small', {
-        x: { min: -8 * P, max: 8 * P }, y: { min: -10 * P, max: 4 * P },
-        speedY: { min: -18, max: -6 }, speedX: { min: -6, max: 6 },
-        scale: { start: 0.1 * P, end: 0 }, alpha: { start: 0.9, end: 0 },
-        tint: [0x7dffc8, 0xffe0f7, 0xc9b3ff, 0xffffff], lifespan: 1300, frequency: 280, blendMode: 'ADD',
-      });
-    });
 
     // ── The girl, standing on the grass in the middle of the island ──
-    const character = this.add.image(cx, grassY + P, charKey).setOrigin(0.5, 201 / 203);
-    const cast = this.add.image(character.x, character.y, charKey).setOrigin(character.originX, character.originY)
-      .setTint(0x2fe0a0).setBlendMode(ADD).setAlpha(0.08);
-    this.tweens.add({ targets: [pool, cast], alpha: '+=0.07', duration: 2400, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    const character = this.createGirl(cx, grassY + P, charScale, charTex.width * charScale, height / 720);
 
     // Starlight / firefly motes drifting around the island
     this.add.particles(0, 0, 'star_small', {
@@ -222,7 +204,7 @@ export class MenuScene extends Phaser.Scene {
       speedX: { min: -12, max: 12 }, speedY: { min: -12, max: 8 },
       scale: { start: 0.09 * P, end: 0.02 * P },
       alpha: { values: [0, 1, 0.6, 1, 0] },
-      tint: [0xfff1a8, 0x9dffd8, 0xffffff],
+      tint: [0xfff1a8, 0xffd1f0, 0xffffff],
       lifespan: 3200, frequency: 220, blendMode: 'ADD',
     });
 
@@ -253,9 +235,126 @@ export class MenuScene extends Phaser.Scene {
     this.layoutInfo = {
       P,
       crest: { top: emY - emH / 2 - 2 * P, bottom: emY + emH / 2, left: cx - emW / 2, right: cx + emW / 2 },
-      character: { top: character.y - charTex.height * character.originY, bottom: character.y },
+      character: { top: character.y - charH * character.originY, bottom: character.y },
       island: { top: islandTop, bottom: islandTop + islandTex.height * P, grassY },
       button: { top: btnY - btnH / 2, bottom: btnY + btnH / 2, y: btnY },
     };
+  }
+
+  /**
+   * The girl on the start screen, with a little life of her own:
+   *  - blinks every few seconds (sometimes twice), breathes gently
+   *  - turns to look toward the mouse pointer
+   *  - hover over her → a happy little hop with sparkles
+   *  - click her → she cheers (celebrate pose, bigger hop, sparkle burst)
+   *  - left alone for a while, she glances around or hops on her own
+   * Her frames are pre-drawn at their screen size, so she stays crisp.
+   */
+  createGirl(x, feetY, scale, width, u) {
+    const POSES = {                       // texture → [torso anchor x, feet y] (fractions of the frame)
+      idle_menu: [0.645, 201 / 203],
+      idle_blink_menu: [0.645, 201 / 203],
+      celebrate_menu: [0.63, 208 / 210],
+    };
+    const baseX = Math.round(x + (POSES.idle_menu[0] - 0.5) * width);   // same spot as before, anchored at her torso
+    const girl = this.add.image(baseX, feetY, 'idle_menu').setScale(scale);
+    const st = { hop: 0, breath: 0, busy: false, facing: 1, pose: 'idle_menu', lastPointer: 0 };
+    const rnd = new Phaser.Math.RandomDataGenerator(['girl']);
+
+    const setPose = (key) => {
+      if (!this.textures.exists(key)) return;
+      st.pose = key;
+      const [ax, fy] = POSES[key];
+      girl.setTexture(key).setFlipX(st.facing < 0).setOrigin(st.facing < 0 ? 1 - ax : ax, fy);
+    };
+    const face = (dir) => {
+      if (dir === st.facing) return;
+      st.facing = dir;
+      setPose(st.pose);
+    };
+    setPose('idle_menu');
+
+    // Breathing (1px) and hops move her; her feet return to the grass every time
+    this.tweens.add({ targets: st, breath: 1, duration: 1400, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    const place = () => girl.setPosition(baseX, Math.round(feetY - st.hop - (st.breath > 0.6 ? Math.max(1, scale) : 0)));
+    this.events.on(Phaser.Scenes.Events.UPDATE, place);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.events.off(Phaser.Scenes.Events.UPDATE, place));
+
+    const sparkle = (n, spread) => {
+      const e = this.add.particles(girl.x, girl.y - girl.displayHeight * 0.7, 'star_small', {
+        speed: { min: 50 * u, max: spread * u },
+        angle: { min: 200, max: 340 },
+        scale: { start: 0.32 * u, end: 0 },
+        alpha: { start: 1, end: 0 },
+        lifespan: 750,
+        gravityY: 140,
+        tint: [0xffd700, 0xffffff, 0xff9de0, 0xc9a0dc],
+        emitting: false,
+      });
+      e.explode(n);
+      this.time.delayedCall(900, () => e.destroy());
+    };
+    const hop = (h, ms) => {
+      this.tweens.killTweensOf(st, ['hop']);
+      st.hop = 0;
+      this.tweens.add({ targets: st, hop: h * u, duration: ms, yoyo: true, ease: 'Quad.easeOut' });
+    };
+
+    // Blinking: every 2–5 s, sometimes a double blink
+    const blinkOnce = () => {
+      if (st.pose !== 'idle_menu' || st.busy) return;
+      setPose('idle_blink_menu');
+      this.time.delayedCall(130, () => { if (st.pose === 'idle_blink_menu') setPose('idle_menu'); });
+    };
+    const scheduleBlink = () => {
+      this.time.delayedCall(rnd.between(2000, 4800), () => {
+        blinkOnce();
+        if (rnd.frac() < 0.25) this.time.delayedCall(280, blinkOnce);
+        scheduleBlink();
+      });
+    };
+    this.time.delayedCall(900, blinkOnce);
+    scheduleBlink();
+
+    // She looks toward the pointer
+    this.input.on('pointermove', (p) => {
+      st.lastPointer = this.time.now;
+      if (st.busy) return;
+      const dx = p.x - girl.x;
+      if (Math.abs(dx) > 50 * u) face(dx < 0 ? -1 : 1);
+    });
+
+    // Hover → happy hop; click → cheer
+    girl.setInteractive({ useHandCursor: true, pixelPerfect: true, alphaTolerance: 40 });
+    let hoverReady = 0;
+    girl.on('pointerover', () => {
+      if (st.busy || this.time.now < hoverReady) return;
+      hoverReady = this.time.now + 1400;
+      hop(9, 160);
+      sparkle(6, 120);
+      this.events.emit('girl-react', 'hover');
+    });
+    girl.on('pointerdown', () => {
+      if (st.busy) return;
+      st.busy = true;
+      setPose('celebrate_menu');
+      hop(18, 220);
+      sparkle(16, 200);
+      this.events.emit('girl-react', 'cheer');
+      this.time.delayedCall(1100, () => { st.busy = false; setPose('idle_menu'); });
+    });
+
+    // Left alone for a while: glance around, or a little hop
+    this.time.addEvent({
+      delay: 6500,
+      loop: true,
+      callback: () => {
+        if (st.busy || this.time.now - st.lastPointer < 4000) return;
+        if (rnd.frac() < 0.6) face(-st.facing); else { hop(6, 150); }
+      },
+    });
+
+    girl.lifeState = st;      // for checks
+    return girl;
   }
 }

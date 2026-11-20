@@ -2,15 +2,14 @@ import Phaser from 'phaser';
 
 /**
  * Pixel-art generators for the start screen: the "Emerald / World" title
- * emblem in its gold filigree frame, emerald gems and crystal clusters, the
- * decorated centre island, the crescent moon,
+ * emblem with its gold Baroque ornament and crown, the decorated centre
+ * island, the crescent moon,
  * four-point sparkles and the Start button. Everything is
  * drawn pixel by pixel at low resolution and shown at a whole-number scale
  * with NEAREST filtering, so every art pixel stays a crisp square.
  */
 
 // ── Palettes ──
-const EMERALD = { out: '#0a3d2c', hi: '#e8fff4', light: '#7dffc8', mid: '#22c98a', dark: '#0e8a5a', deep: '#0b6644' };
 const GOLD = { hi: '#fff4c2', light: '#ffd75e', mid: '#f0a830', dark: '#b8701c', deep: '#8a5a12', edge: '#f2c14e' };
 const INK = '#1a0f2e';
 
@@ -122,33 +121,6 @@ function makeMask(w, h, draw, threshold = 120) {
   return m;
 }
 
-// ── Faceted emerald gems ──
-const GEM_PAL = { o: EMERALD.out, L: EMERALD.hi, l: EMERALD.light, g: EMERALD.mid, d: EMERALD.dark, D: EMERALD.deep };
-export const GEM_LARGE = [
-  '...ooooo...',
-  '..oLllggo..',
-  '.oLlllgggo.',
-  'oLllgggggdo',
-  'olllggggddo',
-  'ogggggdddDo',
-  '.oggdddDDo.',
-  '..odddDDo..',
-  '...ooooo...',
-];
-export const GEM_SMALL = [
-  '..ooo..',
-  '.oLlgo.',
-  'oLlggdo',
-  'olggddo',
-  'ogddDDo',
-  '.odDDo.',
-  '..ooo..',
-];
-
-function drawGem(pc, rows, cx, cy) {
-  pc.pattern(rows, GEM_PAL, cx - (rows[0].length >> 1), cy - (rows.length >> 1));
-}
-
 /** A tiny pixel star (twinkles in the sky). */
 export function makePixelStar(scene, key = 'px_star') {
   if (scene.textures.exists(key)) return key;
@@ -158,37 +130,6 @@ export function makePixelStar(scene, key = 'px_star') {
   [[0, 2], [4, 2], [2, 0], [2, 4]].forEach(([x, y]) => pc.set(x, y, '#c9b3ff', 90));
   pc.toTexture(scene, key);
   return key;
-}
-
-// ── Crystal clusters (emerald, or pastel iridescent) ──
-const IRIDESCENT = { out: '#3b2a6b', hi: '#ffffff', light: '#ffe0f7', mid: '#c9b3ff', dark: '#8fb8ff', deep: '#6a6fd0' };
-
-/**
- * One crystal shard growing from (bx, by): `dir` 1 = up, -1 = hanging down.
- * Shaded light → mid → dark across its width, bright tip. Adds its pixels to `mask`.
- */
-function shard(pc, mask, bx, by, w, h, lean = 0, dir = 1, pal = EMERALD) {
-  const half = w / 2;
-  for (let t = 0; t < h; t++) {
-    const y = Math.round(by - dir * t);
-    const cx = bx + (lean * t) / h;
-    const hw = Math.min(half, (h - 1 - t) * 0.9 + 0.5);
-    const x0 = Math.round(cx - hw), x1 = Math.round(cx + hw) - 1;
-    for (let x = x0; x <= Math.max(x0, x1); x++) {
-      const u = x1 > x0 ? (x - x0) / (x1 - x0) : 0.5;
-      const tip = t >= h - 2;
-      pc.set(x, y, tip ? pal.hi : u < 0.34 ? pal.light : u < 0.7 ? pal.mid : pal.dark);
-      if (pc.in(x, y)) mask.add(y * pc.w + x);
-    }
-  }
-}
-
-/** shards: [dx, w, h, lean, iridescent?] */
-function cluster(pc, x, y, shards, dir = 1) {
-  const mask = new Set();
-  shards.forEach(([dx, w, h, lean, iri]) => shard(pc, mask, x + dx, y, w, h, lean, dir, iri ? IRIDESCENT : EMERALD));
-  pc.outlineMask(mask, EMERALD.out);
-  pc.set(x + shards[0][0] - 1, y - dir * Math.round(shards[0][2] * 0.55), '#ffffff');   // glint
 }
 
 // ── Gold filigree helpers ──
@@ -357,6 +298,8 @@ export function makeTitleEmblem(scene, key = 'menu_emblem') {
     // Swash under the title: tapered sweep out from the centre, curling up at the end
     taper(ctx, bezierPts([cx - 4, tBot + 9], [cx - 16, tBot + 15], [cx - 30, tBot + 13], [cx - 40, tBot + 7]), 2.8, 1.3);
     taper(ctx, spiralPts(cx - 41, tBot + 3, 3.3, Math.PI / 2, 0.85, 1), 1.6, 1.1);
+    // gold diamond bead joining the two halves of the swash
+    ctx.beginPath(); ctx.moveTo(cx, tBot + 5); ctx.lineTo(cx + 4, tBot + 9); ctx.lineTo(cx, tBot + 13); ctx.lineTo(cx - 4, tBot + 9); ctx.closePath(); ctx.fill();
   }, 100);
   const gold = new Set();
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
@@ -365,15 +308,13 @@ export function makeTitleEmblem(scene, key = 'menu_emblem') {
   paintGold(pc, gold);
   pc.outlineMask(gold, '#2a0f3a');
 
-  // Crown jewels: an emerald on the band, pearls on the points, gold beads
-  drawGem(pc, GEM_SMALL, cx, band + 2);
+  // Crown jewels: pearls on the points and a pearl in the middle of the band
+  [[0, 0, '#ffffff'], [1, 0, '#efe6ff'], [-1, 0, '#efe6ff'], [0, 1, '#d9ccf5'], [0, -1, '#ffffff'], [1, 1, '#c9b8f0'], [-1, 1, '#c9b8f0']]
+    .forEach(([dx, dy, c]) => pc.set(cx + dx, band + 2 + dy, c));
   [[-13, 8], [-6.5, 11], [0, 15], [6.5, 11], [13, 8]].forEach(([dx, h]) => {
     const px = Math.round(cx + dx - 0.5), py = band - h - 2;
     pc.set(px, py, '#ffffff'); pc.set(px + 1, py, '#efe6ff'); pc.set(px, py + 1, '#e2d6ff'); pc.set(px + 1, py + 1, '#c9b8f0');
   });
-  [-10, 10].forEach((dx) => { pc.set(cx + dx, band + 2, EMERALD.light); pc.set(cx + dx + (dx < 0 ? -1 : 1), band + 2, EMERALD.mid); });
-  // small gem at the centre of the swash
-  drawGem(pc, GEM_SMALL, cx, tBot + 9);
 
   // Lettering: gold, dark outline, deep drop shadow (stands out on the sky)
   paintTitle(pc, l1, Math.round(cx - l1.tw / 2), tTop);
@@ -442,8 +383,6 @@ export function makeStartButton(scene, key = 'menu_start') {
     });
   });
   pc.outlineMask(gold, '#1a0f2e');
-  drawGem(pc, GEM_SMALL, bx0 + 1, H >> 1);
-  drawGem(pc, GEM_SMALL, bx1 - 1, H >> 1);
 
   // Star icon
   const sx = 36, sy = H / 2;
@@ -491,7 +430,7 @@ export function makeMoon(scene, key = 'menu_moon') {
   return key;
 }
 
-// ── Centre island: the START island art with vines, wildflowers and crystal clusters ──
+// ── Centre island: the START island art with hanging vines and wildflowers ──
 export const ISLAND_EXTRA = 30;     // rows added below the art for hanging vines
 export function makeEmeraldIsland(scene, key = 'menu_island') {
   if (scene.textures.exists(key)) return key;
@@ -541,13 +480,7 @@ export function makeEmeraldIsland(scene, key = 'menu_island') {
     pc.set(x, y, '#ffe066');
   });
 
-  // Glowing faceted crystal clusters on the left and right edges of the grass
-  // (emerald shards mixed with pastel iridescent ones)
-  const gl = topAt(24) + 7, gr = topAt(190) + 7;
-  cluster(pc, 24, gl, [[0, 6, 18, -2], [6, 4, 11, 3, true], [-5, 4, 9, -3, true], [10, 3, 7, 4]]);
-  cluster(pc, 190, gr, [[0, 6, 19, 2], [-6, 4, 12, -3, true], [5, 4, 9, 3, true], [-10, 3, 7, -4]]);
-
   pc.toTexture(scene, key);
-  scene.textures.get(key).customData.island = { crystals: [{ x: 24, y: gl - 8 }, { x: 190, y: gr - 8 }], grassY: 39 };
+  scene.textures.get(key).customData.island = { grassY: 39 };
   return key;
 }
