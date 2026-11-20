@@ -2618,3 +2618,54 @@ All tests pass.
 It's in the same place and the same size, and it still sweeps into view as before.
 
 **File changed:** only `src/effects/RainbowDestination.js`. The old rainbow code is still there, commented out, with notes at the top of the file on how to switch back. Nothing else in the scene was touched, and all tests pass.
+
+
+---
+
+## Turn 46 — Aurora ribbons over the castle
+
+### 👤 You
+
+> In the final scene with the castle and the text "It's just the beginning," replace the rainbow arch with soft aurora ribbons to match my night theme.
+>
+> - Keep it in the same area as the current rainbow, curving over the castle like an arch.
+> - Use my purple palette: violet, lavender, soft teal, and a touch of pink, with low opacity so it looks dreamy, not bright.
+> - Make the ribbons wavy and flowing, with a soft glow and blurred edges.
+> - Add a slow wave animation (8-10 seconds) so they gently sway and shimmer.
+> - Keep it behind the castle and the text so the text stays easy to read.
+> - Change ONLY this rainbow. Do not touch the castle, character, text, buttons, or any other node.
+> - Keep the old rainbow code commented out so I can switch back.
+
+<details>
+<summary><b>Work done</b></summary>
+
+- **Only file changed:** `src/effects/RainbowDestination.js`.
+- **Three aurora ribbons** arching over the castle in the rainbow's area, at radii 290, 345 and 400 around the same centre:
+  - **Colours:** violet, lavender, soft teal and a touch of pink flowing along each ribbon
+  - **Opacity:** low (ribbons 0.3–0.5, breathing down to about 80% of that), drawn additively so they glow softly over the purple sky
+  - **Look:** each ribbon is a soft picture with blurred edges and faint vertical "curtain" rays like a real aurora, fading out at both ends, with a wider, blurrier, fainter copy behind it for the glow
+  - **How it bends:** each ribbon is bent along a curve (a Phaser rope) whose points move every frame
+- **Slow waves:** each ribbon sways in its own slow waves, with full cycles of 9, 10 and 8 seconds, and its light gently breathes, so they flow and shimmer.
+- **Behind everything:** ribbons sit at depth 1, behind the castle island (depth 2) and the clouds at its feet. The quote text is on top in the page and stays easy to read.
+- **Reveal:** the aurora still sweeps into view from the left foot as she heads on from ACHIEVEMENTS, as the rainbow did.
+- **Switching:**
+  - `ARCH_STYLE = 'aurora'` at the top of the file; set it to `'moonbow'` to get the moonbow back (its code is all still there)
+  - the original colourful rainbow is still commented out, with step-by-step "to switch back" notes
+  - if a browser can't use WebGL, the moonbow is shown automatically
+- **Untouched:** castle, island, flowers, landing platform, clouds, stars, background glow, character, quote text, contact card, buttons and all other nodes.
+- **Tests:** rainbow (13/13), ending (24/24) and rainbow-island idle (10/10) suites pass. Screenshots show the ribbons swaying and the quote clearly readable over them.
+
+</details>
+
+### 🤖 Claude
+
+**Done:** the arch over the castle is now soft aurora ribbons.
+- **Look:** three wavy, blurred-edged ribbons in violet, lavender, soft teal and a little pink, at low opacity so they look dreamy.
+- **Movement:** they slowly sway and shimmer on 8–10 second waves.
+- **Readability:** they sit behind the castle and the text, which stays easy to read.
+
+**File changed:** only `src/effects/RainbowDestination.js`.
+- **Moonbow:** set `ARCH_STYLE = 'moonbow'` at the top of that file to bring it back.
+- **Original rainbow:** still there, commented out, with switch-back notes.
+
+All tests pass.

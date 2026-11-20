@@ -9,7 +9,8 @@ import { DESTINATION, ISLANDS } from '../utils/constants.js';
 //       the constructor, the old draw() and the old alpha pulse in reveal()
 //    2. comment out the moonbow lines in the constructor (revealShape / arc image /
 //       shimmer), the moonbow draw() and its pulse in reveal()
-//    (moonbowTexture / shimmerTexture / updateShimmer can stay — unused they do nothing) ──
+//    (moonbowTexture / shimmerTexture / updateShimmer can stay — unused they do nothing)
+//    For the moonbow instead of the aurora, just set ARCH_STYLE = 'moonbow' below. ──
 // const RAINBOW = [0xff6b6b, 0xffa94d, 0xffe066, 0x8ce99a, 0x74c0fc, 0x9775fa, 0xe599f7];
 
 // ── MOONBOW: a pale rainbow made by moonlight — silver, lavender, icy blue.
@@ -24,13 +25,28 @@ const MOONBOW = [               // [colour, opacity], outer → inner
   [0xbcaee8, 0.36],             // lavender fading inward
 ];
 const SHIMMER_MS = 7000;        // one slow pass of light along the moonbow
+
+// ── AURORA RIBBONS (current): soft wavy aurora ribbons arching over the castle,
+//    in the purple palette — violet, lavender, soft teal and a touch of pink.
+//    ARCH_STYLE picks what arches over the castle: 'aurora' or 'moonbow'.
+//    (Aurora needs WebGL; without it the moonbow is shown.) ──
+const ARCH_STYLE = 'aurora';
+const AURORA = [
+  // r = distance from the arch centre, amp = wave height, waves = waves along the ribbon,
+  // period = one full sway (ms), thick = ribbon width, alpha = how strong (low = dreamy)
+  { r: 345, amp: 16, waves: 2.0, period: 9000, phase: 0.0, thick: 70, alpha: 0.5, colors: ['#8e6cff', '#c9a0ff', '#7fe0d2', '#c9a0ff', '#8e6cff'] },
+  { r: 290, amp: 13, waves: 2.6, period: 10000, phase: 1.7, thick: 54, alpha: 0.4, colors: ['#7fe0d2', '#b79cff', '#ffa6d9', '#b79cff', '#7fe0d2'] },
+  { r: 400, amp: 20, waves: 1.6, period: 8000, phase: 3.1, thick: 60, alpha: 0.3, colors: ['#c9a0ff', '#9a7bff', '#ffb3e0', '#9a7bff', '#c9a0ff'] },
+];
+const AURORA_POINTS = 56;
 const OUTER_R = 340;
 const BAND = 17;
 const FLOWER_COLORS = { pink: 0xff8fc8, purple: 0xb57bff, yellow: 0xffe066, white: 0xfff4fb };
 
 /**
- * The final destination: a small castle island under a large moonbow
- * (a pale night rainbow — the old colourful rainbow is kept commented out),
+ * The final destination: a small castle island under soft aurora ribbons
+ * arching over it (ARCH_STYLE can switch to the moonbow; the old colourful
+ * rainbow is kept commented out),
  * with flowers, a glowing landing platform, clouds, stars and a
  * purple-pink magical glow.
  */
@@ -50,18 +66,30 @@ export class RainbowDestination {
       .setAlpha(0);
 
     // this.arc = scene.add.graphics().setDepth(1).setAlpha(0.92);   // OLD RAINBOW
-    // Moonbow: one smooth picture (bands + soft glow), swept into view through
-    // a mask, with a soft light gliding along it (the shimmer)
+    // The arch sweeps into view from its left foot through this mask
     this.revealShape = scene.make.graphics({ x: 0, y: 0 }, false);
     const reveal = this.revealShape.createGeometryMask();
-    this.arc = scene.add.image(this.cx, this.cy, RainbowDestination.moonbowTexture(scene))
-      .setDepth(1).setAlpha(0.9).setMask(reveal);
-    const shimmerKey = RainbowDestination.shimmerTexture(scene);
-    this.shimmer = shimmerKey
-      ? scene.add.image(this.cx, this.cy, shimmerKey).setDepth(1).setBlendMode(Phaser.BlendModes.ADD).setAlpha(0).setMask(reveal)
-      : null;
-    scene.events.on(Phaser.Scenes.Events.UPDATE, this.updateShimmer, this);
-    scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => scene.events.off(Phaser.Scenes.Events.UPDATE, this.updateShimmer, this));
+    const webgl = scene.sys.game.renderer.type === Phaser.WEBGL;
+    this.style = ARCH_STYLE === 'aurora' && webgl ? 'aurora' : 'moonbow';
+    this.arc = null;
+    this.shimmer = null;
+    this.ribbons = [];
+    if (this.style === 'aurora') {
+      // Aurora: wavy ribbons (soft-edged ribbon pictures bent along a moving
+      // curve), each with a wider, fainter copy behind it for the glow
+      this.ribbons = this.createAurora(reveal);
+    } else {
+      // Moonbow: one smooth picture (bands + soft glow) with a soft light
+      // gliding along it (the shimmer)
+      this.arc = scene.add.image(this.cx, this.cy, RainbowDestination.moonbowTexture(scene))
+        .setDepth(1).setAlpha(0.9).setMask(reveal);
+      const shimmerKey = RainbowDestination.shimmerTexture(scene);
+      this.shimmer = shimmerKey
+        ? scene.add.image(this.cx, this.cy, shimmerKey).setDepth(1).setBlendMode(Phaser.BlendModes.ADD).setAlpha(0).setMask(reveal)
+        : null;
+    }
+    scene.events.on(Phaser.Scenes.Events.UPDATE, this.updateArch, this);
+    scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => scene.events.off(Phaser.Scenes.Events.UPDATE, this.updateArch, this));
 
     // Clouds: big puffs hiding the rainbow's feet + soft pink mist around
     this.puffs = [-1, 1].map((side) =>
@@ -294,14 +322,98 @@ export class RainbowDestination {
     return key;
   }
 
-  // Reveal the moonbow from its left foot up and over to `progress` (0–1)
+  // Reveal the arch (aurora or moonbow) from its left foot up and over to `progress` (0–1)
   draw() {
     const g = this.revealShape;
     g.clear();
     if (this.progress <= 0) return;
     g.fillStyle(0xffffff, 1);
-    g.slice(this.cx, this.cy, OUTER_R + BAND + 40, Math.PI, Math.PI + Math.PI * this.progress, false);
+    g.slice(this.cx, this.cy, OUTER_R + BAND + 140, Math.PI, Math.PI + Math.PI * this.progress, false);
     g.fillPath();
+  }
+
+  updateArch(time) {
+    if (this.style === 'aurora') this.updateAurora(time);
+    else this.updateShimmer(time);
+  }
+
+  // ── Aurora ribbons ──────────────────────────────────────────────
+  createAurora(mask) {
+    const scene = this.scene;
+    return AURORA.map((cfg, i) => {
+      const pts = Array.from({ length: AURORA_POINTS }, () => new Phaser.Math.Vector2());
+      const glow = scene.add.rope(this.cx, this.cy, RainbowDestination.auroraTexture(scene, i, true), null, pts.map((v) => v.clone()))
+        .setDepth(1).setBlendMode(Phaser.BlendModes.ADD).setMask(mask).setAlpha(0);
+      const rope = scene.add.rope(this.cx, this.cy, RainbowDestination.auroraTexture(scene, i, false), null, pts)
+        .setDepth(1).setBlendMode(Phaser.BlendModes.ADD).setMask(mask).setAlpha(0);
+      return { cfg, rope, glow };
+    });
+  }
+
+  // A ribbon picture: colours flowing along its length, soft (blurred) edges,
+  // faint vertical "curtain" rays like a real aurora, fading out at both ends.
+  // glow = a wider, blurrier, fainter copy that goes behind it.
+  static auroraTexture(scene, i, glow) {
+    const key = `aurora_${i}${glow ? '_glow' : ''}`;
+    if (scene.textures.exists(key)) return key;
+    const cfg = AURORA[i];
+    const W = 512, H = Math.round(cfg.thick * (glow ? 2 : 1)) + 24;
+    const raw = document.createElement('canvas');
+    raw.width = W; raw.height = H;
+    const rctx = raw.getContext('2d');
+    // colour along the length
+    const lin = rctx.createLinearGradient(0, 0, W, 0);
+    cfg.colors.forEach((c, k) => lin.addColorStop(k / (cfg.colors.length - 1), c));
+    rctx.fillStyle = lin;
+    rctx.fillRect(0, 0, W, H);
+    // alpha: soft band across the width x curtain rays x fade at both ends
+    const img = rctx.getImageData(0, 0, W, H);
+    const d = img.data;
+    const centre = H * 0.55, sigma = (H - 24) * (glow ? 0.3 : 0.24);
+    for (let x = 0; x < W; x++) {
+      const u = x / (W - 1);
+      const ends = Math.min(1, u / 0.14, (1 - u) / 0.14);
+      const endFade = ends * ends * (3 - 2 * ends);
+      const rays = 0.62 + 0.38 * (0.5 + 0.5 * Math.sin(x * 0.23 + i)) * (0.5 + 0.5 * Math.sin(x * 0.061 + 2 * i));
+      for (let y = 0; y < H; y++) {
+        const dy = (y - centre) / sigma;
+        const band = Math.exp(-dy * dy * 0.5) * (y < centre ? 1 : 0.85);
+        d[(y * W + x) * 4 + 3] = Math.round(255 * band * (glow ? 0.45 : rays) * endFade);
+      }
+    }
+    rctx.putImageData(img, 0, 0);
+    // blur -> soft, glowing edges
+    const tex = scene.textures.createCanvas(key, W, H);
+    const ctx = tex.getContext();
+    ctx.filter = `blur(${glow ? 9 : 3}px)`;
+    ctx.drawImage(raw, 0, 0);
+    ctx.filter = 'none';
+    tex.refresh();
+    return key;
+  }
+
+  // Slow sway (8-10 s waves) and a gentle shimmer of light along each ribbon
+  updateAurora(time) {
+    const on = this.progress > 0;
+    this.ribbons.forEach(({ cfg, rope, glow }) => {
+      const w = (Math.PI * 2 * time) / cfg.period;
+      [rope, glow].forEach((r) => {
+        r.points.forEach((p, k) => {
+          const t = k / (r.points.length - 1);
+          const a = Math.PI - 0.06 + t * (Math.PI + 0.12);                  // just past both feet
+          const wave = cfg.amp * Math.sin(Math.PI * 2 * cfg.waves * t + w + cfg.phase)
+            + cfg.amp * 0.4 * Math.sin(Math.PI * 2 * cfg.waves * 2.3 * t - w * 1.4 + cfg.phase);
+          const rr = cfg.r + wave;
+          p.x = Math.cos(a) * rr;
+          p.y = Math.sin(a) * rr * 0.96;
+        });
+        r.setDirty();
+      });
+      // breathing + a soft brightness wave travelling along the ribbon (shimmer)
+      const breathe = 0.8 + 0.2 * Math.sin(w + cfg.phase);
+      rope.setAlpha(on ? cfg.alpha * breathe : 0);
+      glow.setAlpha(on ? cfg.alpha * 0.7 * breathe : 0);
+    });
   }
 
   // A soft light gliding slowly along the moonbow, over and over
@@ -327,8 +439,8 @@ export class RainbowDestination {
       onComplete: () => {
         // OLD RAINBOW pulse:
         // scene.tweens.add({ targets: this.arc, alpha: { from: 0.92, to: 0.72 }, duration: 1800, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
-        // Moonbow: a slower, softer breathing of its light
-        scene.tweens.add({
+        // Moonbow: a slower, softer breathing of its light (the aurora breathes in updateAurora)
+        if (this.arc) scene.tweens.add({
           targets: this.arc,
           alpha: { from: 0.9, to: 0.62 },
           duration: 3200,
