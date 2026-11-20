@@ -2669,3 +2669,39 @@ It's in the same place and the same size, and it still sweeps into view as befor
 - **Original rainbow:** still there, commented out, with switch-back notes.
 
 All tests pass.
+
+
+---
+
+## Turn 47 — After "Keep exploring": the balloon ride down mirrors the ride up
+
+### 👤 You
+
+> When the we press keep exploring do vise vers for the ballong part when she hold the ballon from the avhievemt part show follo strats and land on projects and do not show ballon in the project level (this is only for the case when keep exploring is clicked)
+
+<details>
+<summary><b>Work done</b></summary>
+
+- **"Keep exploring" mode:** `EndingPanel` now reports when "Keep exploring" is chosen (button or Esc), and `GameScene.setExploring()` switches the mode on for the rest of that playthrough. "Play again" starts a fresh game without it.
+- **Holding the ACHIEVEMENTS balloon in that mode (mirror of the ride up):**
+  - top hint: "✦ Follow the stars ↓ · land on PROJECTS ✦" (`HUD.setGuide(mode, landOn)`)
+  - controls bar: "🎈 ↓ Descend ← → Drift ↑ Rise — land on PROJECTS"
+  - a bobbing "⬇ Land here ⬇" sign with a gold ring over the PROJECTS island (`createLandHereMarker` now takes which ride and when)
+  - letting go anywhere other than below ACHIEVEMENTS shows "🎈 Grab the balloon again and land on the PROJECTS island"
+  - all of these go away when she lands
+- **No balloon at the PROJECTS level in that mode:** the balloon by PROJECTS and its "Grab the balloon" sign are put away (`BalloonRide.hide()`), and walking to the post grabs nothing. The balloon she rode down floats away as before, so no balloon is left there.
+- **Unchanged without "Keep exploring":** the balloon by PROJECTS, the normal "Follow the stars ↓" hint and the usual ride down.
+- **Files:** `src/ui/EndingPanel.js`, `src/scenes/UIScene.js`, `src/scenes/GameScene.js`, `src/entities/BalloonRide.js`, `src/ui/HUD.js`.
+- **Tests:**
+  - new suite `explore` passes 12/12: normal game unchanged; "Keep exploring" hides the PROJECTS balloon; holding the balloon down shows the PROJECTS hint, bar and "Land here" sign; after landing they're gone; no balloon or sign at PROJECTS and nothing to grab; warning when letting go elsewhere
+  - ending, ride, ride-down, balloon placing, revisit and rainbow suites all pass
+
+</details>
+
+### 🤖 Claude
+
+**Done:** this only applies after **Keep exploring** is clicked.
+- **Holding the Achievements balloon:** the top hint says "Follow the stars ↓ · land on PROJECTS", the controls bar says "land on PROJECTS", and a bobbing "⬇ Land here ⬇" sign floats over the Projects island. If she lets go anywhere else, a message tells her to grab the balloon again and land on Projects.
+- **Projects level:** the balloon and its "Grab the balloon" sign are gone, so there's no balloon at the Projects level any more.
+
+In a normal game (without "Keep exploring") nothing changed. All tests pass.

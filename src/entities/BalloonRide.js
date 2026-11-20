@@ -294,6 +294,19 @@ export class BalloonRide {
     this.scene.tweens.add({ targets: this.hint, alpha: 1, duration: 500 });
   }
 
+  /**
+   * Put this station away: no balloon and no sign on its post, and it can't be
+   * grabbed (used for the PROJECTS balloon after "Keep exploring").
+   */
+  hide() {
+    this.ready = false;
+    this.hint.setVisible(false);
+    if (!this.holding && !this.leaving && !this.returning) {
+      this.scene.tweens.killTweensOf(this.bouquet);
+      this.bouquet.setVisible(false);
+    }
+  }
+
   // Respawn / restart: drop the balloon without any animation
   cancel() {
     if (!this.holding) return;

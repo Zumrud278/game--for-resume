@@ -82,6 +82,7 @@ export class GameScene extends Phaser.Scene {
     this.player = new Player(this, start.x - 40, start.surfaceY);
     this.currentIsland = 0;
     this.leftNode = false;      // has she gone away from currentIsland since landing on it?
+    this.exploring = false;     // "Keep exploring" chosen at the end (see setExploring)
     // Last platform she stood on (node or rock) — where a fall respawns her
     this.checkpoint = { x: start.x, y: start.surfaceY };
 
@@ -98,7 +99,8 @@ export class GameScene extends Phaser.Scene {
         isTarget: (feetY) => feetY > ach.surfaceY + 40,   // landed anywhere below ACHIEVEMENTS
       });
     this.ride.handoffTo = this.rideDown;
-    this.createLandHereMarker(ach);   // landing on ACHIEVEMENTS: she sets her bouquet on its post
+    this.createLandHereMarker(ach, 'up');                        // riding up → land on ACHIEVEMENTS
+    this.createLandHereMarker(this.islands[3], 'down', () => this.exploring);   // keep exploring: riding down → land on PROJECTS   // landing on ACHIEVEMENTS: she sets her bouquet on its post
     this.rides = [this.ride, this.rideDown];
 
     // "Follow the stars" guide between SKILLS and ACHIEVEMENTS (both ways)
@@ -303,23 +305,37 @@ export class GameScene extends Phaser.Scene {
    * While she rides the balloon up, a bobbing "Land here" sign floats over the
    * ACHIEVEMENTS island — that's where she has to set down.
    */
-  createLandHereMarker(ach) {
+  createLandHereMarker(ach, rideName = 'up', when = () => true) {
     const y = ach.surfaceY - 120;
     const label = this.add.text(0, 0, '⬇  Land here  ⬇', {
       fontFamily: 'Georgia, serif', fontSize: '18px', fontStyle: 'bold', color: '#FFE37A',
       backgroundColor: 'rgba(45,27,78,0.88)', padding: { x: 14, y: 7 },
     }).setOrigin(0.5);
     const ring = this.add.ellipse(0, 120, ach.collider.body.width * 0.8, 22, 0xffd700, 0.18).setStrokeStyle(2, 0xffd700, 0.8);
-    this.landHere = this.add.container(ach.x, y, [ring, label]).setDepth(12).setVisible(false).setAlpha(0);
+    const marker = this.add.container(ach.x, y, [ring, label]).setDepth(12).setVisible(false).setAlpha(0);
+    if (rideName === 'up') this.landHere = marker;
+    else this.landHereDown = marker;
     this.tweens.add({ targets: label, y: -8, duration: 650, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
     this.tweens.add({ targets: ring, alpha: 0.35, scaleX: 1.06, duration: 650, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
     const show = (on) => {
-      this.tweens.killTweensOf(this.landHere);
-      if (on) this.landHere.setVisible(true);
-      this.tweens.add({ targets: this.landHere, alpha: on ? 1 : 0, duration: 250, onComplete: () => { if (!on) this.landHere.setVisible(false); } });
+      this.tweens.killTweensOf(marker);
+      if (on) marker.setVisible(true);
+      this.tweens.add({ targets: marker, alpha: on ? 1 : 0, duration: 250, onComplete: () => { if (!on) marker.setVisible(false); } });
     };
-    this.events.on('balloon-grab', (name) => { if (name === 'up') show(true); });
-    this.events.on('balloon-release', (onTarget, name) => { if (name === 'up') show(false); });
+    this.events.on('balloon-grab', (name) => { if (name === rideName && when()) show(true); });
+    this.events.on('balloon-release', (onTarget, name) => { if (name === rideName) show(false); });
+  }
+
+  /**
+   * "Keep exploring" at the end: the way back down mirrors the way up —
+   * holding the ACHIEVEMENTS balloon shows "Follow the stars ↓ · land on
+   * PROJECTS" and a "Land here" sign over PROJECTS — and the balloon by
+   * PROJECTS is put away (no balloon at the PROJECTS level any more).
+   */
+  setExploring() {
+    if (this.exploring) return;
+    this.exploring = true;
+    this.ride.hide();
   }
 
   // The small node card goes away as soon as she steps off its node
@@ -400,10 +416,13 @@ export class GameScene extends Phaser.Scene {
     else if (this.ride.holding) g = 'up';
     else if (this.lastNode === 4 && this.heading < 0 && x < ach.x && (this.guide === 'down' || b.velocity.x < -20)) g = 'down';
 
-    if (g !== this.guide) {
+    // keep exploring: while she holds the balloon down, the hint names PROJECTS
+    const landOn = g === 'down' && this.exploring && this.rideDown.holding ? 'PROJECTS' : null;
+    if (g !== this.guide || landOn !== this.guideLandOn) {
+      if (g !== this.guide) this.guideCoins.show(g);
       this.guide = g;
-      this.guideCoins.show(g);
-      this.events.emit('guide', g);
+      this.guideLandOn = landOn;
+      this.events.emit('guide', g, landOn);
     }
   }
 

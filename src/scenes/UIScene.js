@@ -33,7 +33,10 @@ export class UIScene extends Phaser.Scene {
     this.panel = new InfoPanel();
 
     // Ending on the rainbow island: quote + contact card
-    this.ending = new EndingPanel({ onRestart: () => gameScene.restartGame() });
+    this.ending = new EndingPanel({
+      onRestart: () => gameScene.restartGame(),
+      onKeepExploring: () => gameScene.setExploring(),
+    });
 
     // Reaching an island: update the level badge and show its resume info
     const onIsland = (index) => {
@@ -50,20 +53,26 @@ export class UIScene extends Phaser.Scene {
 
     // Balloon ride: show its controls while she's holding the balloon
     // Riding up: she has to set down on the ACHIEVEMENTS island
+    // (and after "Keep exploring", riding down: she has to set down on PROJECTS)
     const onGrab = (name) => this.hud.setInstructions(name === 'up'
       ? '🎈  ↑ Rise      ← → Drift      ↓ Descend      —  land on ACHIEVEMENTS'
-      : '🎈  ↑ Rise      ← → Drift      ↓ Descend      (land to let go)');
+      : gameScene.exploring
+        ? '🎈  ↓ Descend      ← → Drift      ↑ Rise      —  land on PROJECTS'
+        : '🎈  ↑ Rise      ← → Drift      ↓ Descend      (land to let go)');
     const onLetGo = (onTarget, name, cancelled) => {
       this.hud.setInstructions();
       if (name === 'up' && !onTarget && !cancelled) {
         this.hud.toast('🎈 Grab the balloon again and land on the ACHIEVEMENTS island', 3200);
+      }
+      if (name === 'down' && gameScene.exploring && !onTarget && !cancelled) {
+        this.hud.toast('🎈 Grab the balloon again and land on the PROJECTS island', 3200);
       }
     };
     gameScene.events.on('balloon-grab', onGrab);
     gameScene.events.on('balloon-release', onLetGo);
 
     // "Follow the stars" hint between SKILLS and ACHIEVEMENTS
-    const onGuide = (mode) => this.hud.setGuide(mode);
+    const onGuide = (mode, landOn) => this.hud.setGuide(mode, landOn);
     gameScene.events.on('guide', onGuide);
     if (gameScene.guide) this.hud.setGuide(gameScene.guide);
 

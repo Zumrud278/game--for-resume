@@ -96,7 +96,7 @@ export class HUD {
   }
 
   /** 'up' | 'down' | null */
-  setGuide(mode) {
+  setGuide(mode, landOn = null) {
     const g = this.guide;
     this.scene.tweens.killTweensOf(g);
     if (!mode) {
@@ -105,7 +105,9 @@ export class HUD {
     }
     this.guideText.setText(mode === 'up'
       ? '✦  Follow the stars ↑  ·  land on ACHIEVEMENTS  ✦'
-      : '✦  Follow the stars ↓  ✦');
+      : landOn
+        ? `✦  Follow the stars ↓  ·  land on ${landOn}  ✦`
+        : '✦  Follow the stars ↓  ✦');
     const w = this.guideText.width + 44;
     const h = 40;
     this.guideBg.clear();

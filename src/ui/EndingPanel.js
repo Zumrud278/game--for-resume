@@ -22,8 +22,9 @@ const prettyUrl = (url) => url.replace(/^https?:\/\//, '').replace(/^www\./, '')
  *      (a small button brings it back)
  */
 export class EndingPanel {
-  constructor({ onRestart } = {}) {
+  constructor({ onRestart, onKeepExploring } = {}) {
     this.onRestart = onRestart;
+    this.onKeepExploring = onKeepExploring;   // "Keep exploring" (button or Esc)
     this.isOpen = false;     // true while the quote/card is blocking the game
     this.timers = [];
 
@@ -115,6 +116,7 @@ export class EndingPanel {
   // "Keep exploring": hide the card, free the controls, keep a reopen button
   hideCard() {
     this.isOpen = false;
+    this.onKeepExploring?.();
     this.root.classList.remove('end-show-card', 'end-show-veil');
     this.later(450, () => {
       if (!this.isOpen) this.el.card.hidden = true;
